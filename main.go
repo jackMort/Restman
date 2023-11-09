@@ -16,7 +16,7 @@ import (
 	boxer "github.com/treilik/bubbleboxer"
 )
 
-var windows = []string{"url", "middle", "collections"}
+var windows = []string{"collections", "url", "middle"}
 
 var (
 	testStyle = lipgloss.NewStyle().
@@ -45,8 +45,7 @@ func stripErr(n boxer.Node, _ error) boxer.Node {
 func main() {
 	middle := box{title: "Results"}
 	url := url.New()
-	lower := newHelp()
-  colBox := collections.New()
+	colBox := collections.New()
 
 	// layout-tree defintion
 	m := model{tui: boxer.Boxer{}}
@@ -67,7 +66,7 @@ func main() {
 	// middle Node
 	middleNode := boxer.CreateNoBorderNode()
 	middleNode.SizeFunc = func(node boxer.Node, widthOrHeight int) []int {
-    fmt.Errorf("widthOrHeight: %d", widthOrHeight)
+		fmt.Errorf("widthOrHeight: %d", widthOrHeight)
 		return []int{
 			30,
 			widthOrHeight - 30,
@@ -82,13 +81,11 @@ func main() {
 	rootNode.VerticalStacked = true
 	rootNode.SizeFunc = func(node boxer.Node, widthOrHeight int) []int {
 		return []int{
-			widthOrHeight - 1,
-			1,
+			widthOrHeight,
 		}
 	}
 	rootNode.Children = []boxer.Node{
-    middleNode,
-		stripErr(m.tui.CreateLeaf("footer", lower)),
+		middleNode,
 	}
 
 	m.tui.LayoutTree = rootNode
@@ -115,9 +112,8 @@ func main() {
 }
 
 type model struct {
-	tui        boxer.Boxer
-	focusedIdx int
-	focused    string
+	tui     boxer.Boxer
+	focused string
 }
 
 func (m model) OnChange(ap app.App) {
@@ -127,24 +123,31 @@ func (m model) OnChange(ap app.App) {
 }
 
 func (m model) Init() tea.Cmd {
-	m.Next()
+	m.focused = "collections"
 	return nil
 }
 
 func (m *model) Next() (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
+
 	if m.focused != "" {
 		var previous tea.Model = m.tui.ModelMap[m.focused]
 		m.tui.ModelMap[m.focused], cmd = previous.Update(config.WindowFocusedMsg{State: false})
 		cmds = append(cmds, cmd)
-		m.focusedIdx++
 	}
 
-	if m.focusedIdx == len(windows) {
-		m.focusedIdx = 0
+	switch m.focused {
+	case "collections":
+		m.focused = "url"
+	case "url":
+		m.focused = "middle"
+	case "middle":
+		m.focused = "collections"
+	default:
+		m.focused = "collections"
 	}
-	m.focused = windows[m.focusedIdx]
+
 	m.tui.ModelMap[m.focused], cmd = m.tui.ModelMap[m.focused].Update(config.WindowFocusedMsg{State: true})
 
 	cmds = append(cmds, cmd)

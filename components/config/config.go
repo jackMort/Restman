@@ -22,6 +22,11 @@ var BoxHeader = lipgloss.NewStyle().
 	BorderForeground(COLOR_SUBTLE).
 	Render
 
+var BoxDescription = lipgloss.NewStyle().
+	Foreground(COLOR_SUBTLE).
+	Italic(true).
+	Render
+
 type WindowFocusedMsg struct {
 	State bool
 }

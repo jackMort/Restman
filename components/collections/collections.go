@@ -1,6 +1,7 @@
 package collections
 
 import (
+	"restman/app"
 	"restman/components/config"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -9,13 +10,11 @@ import (
 
 var (
 	normal = lipgloss.NewStyle().
-		Bold(true).
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(config.COLOR_SUBTLE).
 		PaddingLeft(1)
 
 	focused = lipgloss.NewStyle().
-		Bold(true).
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(config.COLOR_HIGHLIGHT).
 		PaddingLeft(1)
@@ -39,11 +38,14 @@ var (
 type collections struct {
 	focused bool
 	mod     tea.Model
+	smod    tea.Model
+	state   app.App
 }
 
 func New() collections {
 	return collections{
-		mod: NewModel(),
+		mod:  NewModel(),
+		smod: NewCallModel(),
 	}
 }
 
@@ -64,10 +66,19 @@ func (m collections) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		focused.Height(msg.Height - 2)
 	}
 
-	var cmd tea.Cmd
-	newModel, cmd := m.mod.Update(msg)
-	m.mod = newModel
-	return m, cmd
+	var cmds []tea.Cmd
+	if app.Application.SelectedCollection != "" {
+		newSModel, cmd2 := m.smod.Update(msg)
+		m.smod = newSModel
+
+		cmds = append(cmds, cmd2)
+	} else {
+		newModel, cmd := m.mod.Update(msg)
+		m.mod = newModel
+		cmds = append(cmds, cmd)
+	}
+
+	return m, tea.Batch(cmds...)
 }
 
 func (m collections) View() string {
@@ -77,12 +88,17 @@ func (m collections) View() string {
 	}
 
 	// buttons := lipgloss.JoinHorizontal(lipgloss.Left,
-	// 	config.BoxHeader("Collections"),
 	// )
 
-	// content := lipgloss.JoinVertical(lipgloss.Left,
-	// 	buttons,
-	// )
+	if app.Application.SelectedCollection != "" {
+		content := lipgloss.JoinVertical(
+			lipgloss.Left,
+			config.BoxHeader("󰅁 "+app.Application.SelectedCollection),
+			config.BoxDescription("http://api.zippopotam.us"),
+			m.smod.View(),
+		)
+		return style.Render(content)
+	}
 
 	return style.Render(m.mod.View())
 }

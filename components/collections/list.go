@@ -17,20 +17,16 @@ var (
 			BorderBottom(true).
 			BorderForeground(config.COLOR_SUBTLE)
 
-  titleBarStyle = lipgloss.NewStyle().PaddingBottom(1)
-
-	statusMessageStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.AdaptiveColor{Light: "#04B575", Dark: "#04B575"}).
-				Render
+	titleBarStyle = lipgloss.NewStyle().PaddingBottom(1)
 )
 
 type item struct {
-	title       string
-	description string
+	title string
+	desc  string
 }
 
 func (i item) Title() string       { return i.title }
-func (i item) Description() string { return i.description }
+func (i item) Description() string { return "0 calls" }
 func (i item) FilterValue() string { return i.title }
 
 type listKeyMap struct {
@@ -72,24 +68,42 @@ func newListKeyMap() *listKeyMap {
 }
 
 type model struct {
-	list          list.Model
-	itemGenerator *randomItemGenerator
-	keys          *listKeyMap
-	delegateKeys  *delegateKeyMap
+	list         list.Model
+	keys         *listKeyMap
+	delegateKeys *delegateKeyMap
 }
 
 func NewModel() model {
 	var (
-		itemGenerator randomItemGenerator
-		delegateKeys  = newDelegateKeyMap()
-		listKeys      = newListKeyMap()
+		delegateKeys = newDelegateKeyMap()
+		listKeys     = newListKeyMap()
 	)
 
 	// Make initial list of items
-	const numItems = 24
-	items := make([]list.Item, numItems)
-	for i := 0; i < numItems; i++ {
-		items[i] = itemGenerator.next()
+	items := []list.Item{
+		item{title: "Raspberry Pi’s", desc: "I have ’em all over my house"},
+		item{title: "Nutella", desc: "It's good on toast"},
+		item{title: "Bitter melon", desc: "It cools you down"},
+		item{title: "Nice socks", desc: "And by that I mean socks without holes"},
+		item{title: "Eight hours of sleep", desc: "I had this once"},
+		item{title: "Cats", desc: "Usually"},
+		item{title: "Plantasia, the album", desc: "My plants love it too"},
+		item{title: "Pour over coffee", desc: "It takes forever to make though"},
+		item{title: "VR", desc: "Virtual reality...what is there to say?"},
+		item{title: "Noguchi Lamps", desc: "Such pleasing organic forms"},
+		item{title: "Linux", desc: "Pretty much the best OS"},
+		item{title: "Business school", desc: "Just kidding"},
+		item{title: "Pottery", desc: "Wet clay is a great feeling"},
+		item{title: "Shampoo", desc: "Nothing like clean hair"},
+		item{title: "Table tennis", desc: "It’s surprisingly exhausting"},
+		item{title: "Milk crates", desc: "Great for packing in your extra stuff"},
+		item{title: "Afternoon tea", desc: "Especially the tea sandwich part"},
+		item{title: "Stickers", desc: "The thicker the vinyl the better"},
+		item{title: "20° Weather", desc: "Celsius, not Fahrenheit"},
+		item{title: "Warm light", desc: "Like around 2700 Kelvin"},
+		item{title: "The vernal equinox", desc: "The autumnal equinox is pretty good too"},
+		item{title: "Gaffer’s tape", desc: "Basically sticky fabric"},
+		item{title: "Terrycloth", desc: "In other words, towel fabric"},
 	}
 
 	// Setup list
@@ -98,7 +112,7 @@ func NewModel() model {
 	groceryList.Title = "Collections"
 	groceryList.Styles.Title = titleStyle
 	groceryList.Styles.TitleBar = titleBarStyle
-  groceryList.Help.ShowAll = true
+	groceryList.Help.ShowAll = true
 	groceryList.AdditionalFullHelpKeys = func() []key.Binding {
 		return []key.Binding{
 			listKeys.toggleSpinner,
@@ -114,10 +128,9 @@ func NewModel() model {
 	groceryList.SetShowStatusBar(false)
 
 	return model{
-		list:          groceryList,
-		keys:          listKeys,
-		delegateKeys:  delegateKeys,
-		itemGenerator: &itemGenerator,
+		list:         groceryList,
+		keys:         listKeys,
+		delegateKeys: delegateKeys,
 	}
 }
 
@@ -131,10 +144,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		h, v := appStyle.GetFrameSize()
-		m.list.SetSize(msg.Width-h-2, msg.Height-v-2)
+		m.list.SetSize(msg.Width-h-2, msg.Height-v-3)
 
 	case tea.KeyMsg:
-		// Don't match any of the keys below if we're actively filtering.
+
 		if m.list.FilterState() == list.Filtering {
 			break
 		}
@@ -165,10 +178,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case key.Matches(msg, m.keys.insertItem):
 			m.delegateKeys.remove.SetEnabled(true)
-			newItem := m.itemGenerator.next()
+			newItem := item{title: "Stickers", desc: "The thicker the vinyl the better"}
 			insCmd := m.list.InsertItem(0, newItem)
-			statusCmd := m.list.NewStatusMessage(statusMessageStyle("Added " + newItem.Title()))
-			return m, tea.Batch(insCmd, statusCmd)
+			return m, insCmd
 		}
 	}
 
