@@ -12,19 +12,14 @@ func newItemDelegate(keys *delegateKeyMap) list.DefaultDelegate {
 	d := list.NewDefaultDelegate()
 
 	d.UpdateFunc = func(msg tea.Msg, m *list.Model) tea.Cmd {
-		var title string
 
-		if i, ok := m.SelectedItem().(item); ok {
-			title = i.Title()
-		} else {
-			return nil
-		}
+		i, _ := m.SelectedItem().(app.Collection)
 
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
 			switch {
 			case key.Matches(msg, keys.choose):
-				app.SetSelectedCollection(title)
+				app.SetSelectedCollection(&i)
 
 			case key.Matches(msg, keys.remove):
 				index := m.Index()

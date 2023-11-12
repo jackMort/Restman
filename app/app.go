@@ -4,11 +4,31 @@ type Listener interface {
 	OnChange(app App)
 }
 
+type Collection struct {
+	Name    string
+	Calls   []Call
+	BaseUrl string
+}
+
+func (i Collection) Title() string       { return i.Name }
+func (i Collection) Description() string { return i.BaseUrl }
+func (i Collection) FilterValue() string { return i.Name }
+
+type Call struct {
+	Endpoint string
+	Method   string
+}
+
+func (i Call) Title() string       { return i.Endpoint }
+func (i Call) Description() string { return i.Method }
+func (i Call) FilterValue() string { return i.Endpoint }
+
 type App struct {
 	Url                string
 	listeners          []Listener
 	Body               string
-	SelectedCollection string
+	SelectedCollection *Collection
+	SelectedCall       *Call
 	status_code        int
 }
 
@@ -36,7 +56,12 @@ func SetResponse(body string, status_code int) {
 	notify()
 }
 
-func SetSelectedCollection(collection string) {
+func SetSelectedCollection(collection *Collection) {
 	Application.SelectedCollection = collection
+	notify()
+}
+
+func SetSelectedCall(call *Call) {
+	Application.SelectedCall = call
 	notify()
 }

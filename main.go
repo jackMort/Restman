@@ -7,6 +7,7 @@ import (
 	"restman/app"
 	"restman/components/collections"
 	"restman/components/config"
+	"restman/components/footer"
 	"restman/components/url"
 
 	"github.com/TylerBrock/colorjson"
@@ -21,13 +22,13 @@ var windows = []string{"collections", "url", "middle"}
 var (
 	testStyle = lipgloss.NewStyle().
 			Bold(true).
-			Border(lipgloss.RoundedBorder()).
+			Border(lipgloss.NormalBorder()).
 			BorderForeground(config.COLOR_SUBTLE).
 			PaddingLeft(1)
 
 	testStyleFocused = lipgloss.NewStyle().
 				Bold(true).
-				Border(lipgloss.RoundedBorder()).
+				Border(lipgloss.NormalBorder()).
 				BorderForeground(config.COLOR_HIGHLIGHT).
 				PaddingLeft(1)
 
@@ -46,6 +47,7 @@ func main() {
 	middle := box{title: "Results"}
 	url := url.New()
 	colBox := collections.New()
+	footerBox := footer.New()
 
 	// layout-tree defintion
 	m := model{tui: boxer.Boxer{}}
@@ -81,11 +83,13 @@ func main() {
 	rootNode.VerticalStacked = true
 	rootNode.SizeFunc = func(node boxer.Node, widthOrHeight int) []int {
 		return []int{
-			widthOrHeight,
+			widthOrHeight - 1,
+			1,
 		}
 	}
 	rootNode.Children = []boxer.Node{
 		middleNode,
+		stripErr(m.tui.CreateLeaf("footer", footerBox)),
 	}
 
 	m.tui.LayoutTree = rootNode
@@ -123,7 +127,6 @@ func (m model) OnChange(ap app.App) {
 }
 
 func (m model) Init() tea.Cmd {
-	m.focused = "collections"
 	return nil
 }
 
@@ -174,10 +177,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case tea.WindowSizeMsg:
 		m.tui.UpdateSize(msg)
-	default:
-		m.tui.ModelMap["footer"], cmd = m.tui.ModelMap["footer"].Update(msg)
-		m.tui.ModelMap["url"].Update(msg)
 	}
+
+  var cmdF tea.Cmd
+	m.tui.ModelMap["footer"], cmdF = m.tui.ModelMap["footer"].Update(msg)
+  cmds = append(cmds, cmdF)
 
 	cmds = append(cmds, cmd)
 	return m, tea.Batch(cmds...)

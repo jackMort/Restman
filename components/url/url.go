@@ -17,13 +17,13 @@ import (
 var (
 	normal = lipgloss.NewStyle().
 		Bold(true).
-		Border(lipgloss.RoundedBorder()).
+		Border(lipgloss.NormalBorder()).
 		BorderForeground(config.COLOR_SUBTLE).
 		PaddingLeft(1)
 
 	focused = lipgloss.NewStyle().
 		Bold(true).
-		Border(lipgloss.RoundedBorder()).
+		Border(lipgloss.NormalBorder()).
 		BorderForeground(config.COLOR_HIGHLIGHT).
 		PaddingLeft(1)
 
@@ -158,9 +158,13 @@ func (m url) View() string {
 	methodStyle.Background(lipgloss.Color(methodColors[m.method]))
 	method := methodStyle.Render(" " + m.method + " ")
 	send := buttonStyle.Render(" SEND ")
+	if app.Application.SelectedCall != nil {
+
+		m.t.Prompt = app.Application.SelectedCall.Endpoint
+	}
 
 	m.t.Width = m.width - lipgloss.Width(method) - lipgloss.Width(send) - 7
-	m.t.Placeholder = "http://google.pl" + strings.Repeat(" ", m.t.Width-15)
+	m.t.Placeholder = "http://google.pl" + strings.Repeat(" ", m.t.Width-15-len(m.t.Prompt))
 
 	v := m.t.View()
 

@@ -3,8 +3,10 @@ package collections
 import (
 	"fmt"
 	"io"
+	"restman/app"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -18,18 +20,15 @@ var (
 	quitTextStyle     = lipgloss.NewStyle().Margin(1, 0, 2, 4)
 )
 
-type callItem struct {
-	path string
-}
 type itemDelegate struct{}
 
 func (d itemDelegate) Height() int                             { return 1 }
 func (d itemDelegate) Spacing() int                            { return 0 }
 func (d itemDelegate) Update(_ tea.Msg, _ *list.Model) tea.Cmd { return nil }
 func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
-	str := list.Item(listItem).(callItem).Title()
+	str := list.Item(listItem).(app.Call).Title()
 
-  fn := func(s ...string) string {
+	fn := func(s ...string) string {
 		return itemStyle.Render(" 󱂛 " + strings.Join(s, " "))
 	}
 	if index == m.Index() {
@@ -41,9 +40,6 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 	fmt.Fprint(w, fn(str))
 }
 
-func (i callItem) Title() string       { return i.path }
-func (i callItem) Description() string { return "GET" }
-func (i callItem) FilterValue() string { return i.path }
 
 type callModel struct {
 	list list.Model
@@ -53,19 +49,26 @@ func NewCallModel() callModel {
 
 	// Make initial list of items
 	items := []list.Item{
-		callItem{path: "/us/90210"},
-		callItem{path: "/us/ma/belmont"},
-		callItem{path: "/us/ma/boston"},
+		app.Call{Endpoint: "/us/90210"},
+		app.Call{Endpoint: "/us/ma/belmont"},
+		app.Call{Endpoint: "/us/ma/boston"},
 	}
 
 	groceryList := list.New(items, itemDelegate{}, 0, 0)
-	groceryList.Title = "  segments-api"
 	groceryList.Styles.Title = titleStyle
 	groceryList.Styles.TitleBar = titleBarStyle
 	groceryList.Help.ShowAll = true
-	groceryList.SetShowHelp(false)
-  groceryList.SetShowTitle(false)
+	groceryList.SetShowHelp(true)
+	groceryList.SetShowTitle(false)
 	groceryList.SetShowStatusBar(false)
+	groceryList.AdditionalFullHelpKeys = func() []key.Binding {
+		return []key.Binding{
+			key.NewBinding(
+				key.WithKeys("ctrl+h"),
+				key.WithHelp("ctrl+h", "back to collections"),
+			),
+		}
+	}
 
 	return callModel{
 		list: groceryList,
@@ -84,6 +87,20 @@ func (m callModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		h, v := appStyle.GetFrameSize()
 		m.list.SetSize(msg.Width-h-2, msg.Height-v-5)
 		println(msg.Height)
+	case tea.KeyMsg:
+
+		if m.list.FilterState() == list.Filtering {
+			break
+		}
+
+		switch msg.String() {
+		case "ctrl+h":
+			app.SetSelectedCollection(nil)
+
+		case "enter":
+			i, _ := m.list.SelectedItem().(app.Call)
+			app.SetSelectedCall(&i)
+		}
 	}
 
 	// This will also call our delegate's update function.

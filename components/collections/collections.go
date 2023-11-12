@@ -10,12 +10,12 @@ import (
 
 var (
 	normal = lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
+		Border(lipgloss.NormalBorder()).
 		BorderForeground(config.COLOR_SUBTLE).
 		PaddingLeft(1)
 
 	focused = lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
+		Border(lipgloss.NormalBorder()).
 		BorderForeground(config.COLOR_HIGHLIGHT).
 		PaddingLeft(1)
 
@@ -54,8 +54,8 @@ func (m collections) Init() tea.Cmd {
 }
 
 func (m collections) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmds []tea.Cmd
 	switch msg := msg.(type) {
-
 	case config.WindowFocusedMsg:
 		m.focused = msg.State
 
@@ -64,10 +64,14 @@ func (m collections) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		normal.Height(msg.Height - 2)
 		focused.Width(msg.Width - 2)
 		focused.Height(msg.Height - 2)
+
+		newSModel, cmd2 := m.smod.Update(msg)
+		m.smod = newSModel
+
+		cmds = append(cmds, cmd2)
 	}
 
-	var cmds []tea.Cmd
-	if app.Application.SelectedCollection != "" {
+	if app.Application.SelectedCollection != nil {
 		newSModel, cmd2 := m.smod.Update(msg)
 		m.smod = newSModel
 
@@ -90,11 +94,11 @@ func (m collections) View() string {
 	// buttons := lipgloss.JoinHorizontal(lipgloss.Left,
 	// )
 
-	if app.Application.SelectedCollection != "" {
+	if app.Application.SelectedCollection != nil {
 		content := lipgloss.JoinVertical(
 			lipgloss.Left,
-			config.BoxHeader("󰅁 "+app.Application.SelectedCollection),
-			config.BoxDescription("http://api.zippopotam.us"),
+			config.BoxHeader("󰅁 "+app.Application.SelectedCollection.Name),
+			config.BoxDescription(app.Application.SelectedCollection.BaseUrl),
 			m.smod.View(),
 		)
 		return style.Render(content)
