@@ -46,8 +46,7 @@ func stripErr(n boxer.Node, _ error) boxer.Node {
 
 func main() {
 	middle := box{title: "Results"}
-	middle.Tabs = []string{"Results", "Params", "Headers"}
-	middle.TabContent = []string{"Lip Gloss Tab", "Blush Tab", "Eye Shadow Tab", "Mascara Tab", "Foundation Tab"}
+	middle.Tabs = []string{"Results", "Params", "Headers", "Auth"}
 	url := url.New()
 	colBox := collections.New()
 	footerBox := footer.New()
@@ -209,31 +208,30 @@ var (
 	highlightColor    = lipgloss.AdaptiveColor{Light: "#874BFD", Dark: "#7D56F4"}
 	inactiveTabStyle  = lipgloss.NewStyle().Border(inactiveTabBorder, true).BorderForeground(highlightColor).Padding(0, 1)
 	activeTabStyle    = inactiveTabStyle.Copy().Border(activeTabBorder, true)
-	windowStyle       = lipgloss.NewStyle().BorderForeground(highlightColor).Padding(2, 0).Align(lipgloss.Center).Border(lipgloss.NormalBorder()).UnsetBorderTop()
+	windowStyle       = lipgloss.NewStyle().BorderForeground(highlightColor).Border(lipgloss.NormalBorder()).UnsetBorderTop()
 	tabGap            = inactiveTabStyle.Copy().
 				BorderTop(false).
 				BorderLeft(false).
 				BorderRight(false)
+
+	emptyMessage = lipgloss.NewStyle().Padding(2, 2).Foreground(config.COLOR_GRAY)
 )
 
 type box struct {
-	title      string
-	focused    bool
-	body       string
-	width      int
-	height     int
-	viewport   viewport.Model
-	Tabs       []string
-	TabContent []string
-	activeTab  int
+	title     string
+	focused   bool
+	body      string
+	width     int
+	height    int
+	viewport  viewport.Model
+	Tabs      []string
+	activeTab int
 }
 
 // satisfy the tea.Model interface
 func (b box) Init() tea.Cmd {
 	b.viewport = viewport.New(10, 10)
 	b.activeTab = 1
-	b.Tabs = []string{"Lip Gloss", "Blush", "Eye Shadow", "Mascara", "Foundation"}
-	b.TabContent = []string{"Lip Gloss Tab", "Blush Tab", "Eye Shadow Tab", "Mascara Tab", "Foundation Tab"}
 	return nil
 }
 
@@ -248,21 +246,35 @@ func (b box) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		b.width = msg.Width
 		b.height = msg.Height
 
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "ctrl+l":
+			b.activeTab = min(b.activeTab+1, len(b.Tabs)-1)
+
+		case "ctrl+h":
+			b.activeTab = max(b.activeTab-1, 0)
+		}
+
 	case config.WindowFocusedMsg:
 		b.focused = msg.State
 
 	case config.AppStateChanged:
-		b.body = msg.State.Body
+		if msg.State.Body != "" {
+			b.body = msg.State.Body
 
-		// Create an intersting JSON object to marshal in a pretty format
-		f := colorjson.NewFormatter()
-		f.Indent = 2
+			// Create an intersting JSON object to marshal in a pretty format
+			f := colorjson.NewFormatter()
+			f.Indent = 2
 
-		var obj interface{}
-		json.Unmarshal([]byte(b.body), &obj)
-		s, _ := f.Marshal(obj)
+			var obj interface{}
+			json.Unmarshal([]byte(b.body), &obj)
+			s, _ := f.Marshal(obj)
+			b.viewport.SetContent(string(s))
+		} else {
 
-		b.viewport.SetContent(string(s))
+			b.body = "No response"
+			b.viewport.SetContent(emptyMessage.Render(b.body))
+		}
 
 	}
 	var cmds []tea.Cmd
@@ -278,9 +290,21 @@ func (b box) View() string {
 
 	var renderedTabs []string
 
+	if b.focused {
+		inactiveTabStyle.BorderForeground(config.COLOR_HIGHLIGHT)
+		activeTabStyle.BorderForeground(config.COLOR_HIGHLIGHT)
+		windowStyle.BorderForeground(config.COLOR_HIGHLIGHT)
+		tabGap.BorderForeground(config.COLOR_HIGHLIGHT)
+	} else {
+		inactiveTabStyle.BorderForeground(config.COLOR_SUBTLE)
+		activeTabStyle.BorderForeground(config.COLOR_SUBTLE)
+		windowStyle.BorderForeground(config.COLOR_SUBTLE)
+		tabGap.BorderForeground(config.COLOR_SUBTLE)
+	}
+
 	for i, t := range b.Tabs {
 		var style lipgloss.Style
-		isFirst, isLast, isActive := i == 0, i == len(b.Tabs)-1, i == b.activeTab
+		isFirst, isActive := i == 0, i == b.activeTab
 		if isActive {
 			style = activeTabStyle.Copy()
 		} else {
@@ -291,16 +315,14 @@ func (b box) View() string {
 			border.BottomLeft = "│"
 		} else if isFirst && !isActive {
 			border.BottomLeft = "├"
-		} else if isLast && isActive {
-			border.BottomRight = "│"
 		}
 
 		style = style.Border(border)
 		renderedTabs = append(renderedTabs, style.Render(t))
 	}
-	renderedTabs = append(renderedTabs, tabGap.Render(strings.Repeat(" ", b.width-38)))
+	renderedTabs = append(renderedTabs, tabGap.Render(strings.Repeat(" ", b.width-46)))
 
-  windowStyle.Height(b.height - 4)
+	windowStyle.Height(b.height - 4)
 
 	style := inactiveTabStyle.Copy()
 	border, _, _, _, _ := style.GetBorder()
@@ -310,8 +332,19 @@ func (b box) View() string {
 	renderedTabs = append(renderedTabs, style.Render(" "))
 	row := lipgloss.JoinHorizontal(lipgloss.Bottom, renderedTabs...)
 	doc.WriteString(row)
-  doc.WriteString("\n")
-	doc.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(b.TabContent[b.activeTab]))
+	doc.WriteString("\n")
+
+	b.viewport.Width = b.width - 2
+	b.viewport.Height = b.height - 5
+
+	var content string
+	if b.activeTab == 0 {
+		content = b.viewport.View()
+	} else {
+    content = emptyMessage.Render("No implemented yet")
+  }
+
+	doc.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(content))
 	return docStyle.Render(doc.String())
 
 	// b.viewport.Width = b.width - 2

@@ -123,7 +123,7 @@ func (m url) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			params := utils.HTTPRequestParams{
 				Method:   "GET",
-				URL:      "https://api.publicapis.org/entries",
+				URL:      app.GetFullUrl(),
 				Username: "u",
 				Password: "p",
 				Headers: map[string]string{

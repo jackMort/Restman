@@ -1,7 +1,9 @@
 package footer
 
 import (
+	"restman/app"
 	"restman/components/config"
+	"strconv"
 
 	"github.com/charmbracelet/bubbles/stopwatch"
 	tea "github.com/charmbracelet/bubbletea"
@@ -60,7 +62,26 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	var cmd tea.Cmd
-	m.statusbar.SetContent("󰞉 STATUS: 200", "https://zippopotamus.us/us/90210", m.stopwatch.View(), " 805 ms")
+	code, color := app.GetStatus()
+	m.statusbar.SetColors(
+		statusbar.ColorConfig{
+			Foreground: lipgloss.AdaptiveColor{Dark: "#ffffff", Light: "#ffffff"},
+			Background: lipgloss.AdaptiveColor{Light: color, Dark: color},
+		},
+		statusbar.ColorConfig{
+			Foreground: lipgloss.AdaptiveColor{Light: "#ffffff", Dark: "#ffffff"},
+			Background: lipgloss.AdaptiveColor{Light: "#3c3836", Dark: "#3c3836"},
+		},
+		statusbar.ColorConfig{
+			Foreground: lipgloss.AdaptiveColor{Light: "#ffffff", Dark: "#ffffff"},
+			Background: lipgloss.AdaptiveColor{Light: "#3c3836", Dark: "#3c3836"},
+		},
+		statusbar.ColorConfig{
+			Foreground: lipgloss.AdaptiveColor{Light: "#ffffff", Dark: "#ffffff"},
+			Background: lipgloss.AdaptiveColor{Light: "#6124DF", Dark: "#6124DF"},
+		},
+	)
+	m.statusbar.SetContent("󰞉 STATUS: "+strconv.Itoa(code), app.GetFullUrl(), "", " 805 ms")
 	m.stopwatch, cmd = m.stopwatch.Update(msg)
 	return m, cmd
 }
