@@ -8,6 +8,7 @@ import (
 	"restman/components/collections"
 	"restman/components/config"
 	"restman/components/footer"
+	"restman/components/popup"
 	"restman/components/url"
 	"strings"
 
@@ -120,6 +121,7 @@ func main() {
 type model struct {
 	tui     boxer.Boxer
 	focused string
+	popup   tea.Model
 }
 
 func (m model) OnChange(ap app.App) {
@@ -162,16 +164,38 @@ func (m *model) Next() (tea.Model, tea.Cmd) {
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
+
+	// ----------------------------
+	//        POPUP LOGIC
+	switch msg := msg.(type) {
+	case popup.ChoiceResultMsg:
+		m.popup = nil
+		if msg.Result {
+			return m, tea.Quit
+		}
+	}
+
+	// If we are showing a popup, we need to update the popup
+	if m.popup != nil {
+		m.popup, cmd = m.popup.Update(msg)
+		return m, cmd
+	}
+	// ----------------------------
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		{
 
 			switch msg.String() {
 			case "q", "ctrl+c":
-				return m, tea.Quit
+				width := 60
+				m.popup = popup.NewChoice(m.View(), width, "Are you sure, you want to quit?", false)
+				return m, m.popup.Init()
 			case "tab":
 				m, cmd := m.Next()
 				return m, cmd
+
+			case "p":
 			}
 			if m.focused != "" {
 				m.tui.ModelMap[m.focused], cmd = m.tui.ModelMap[m.focused].Update(msg)
@@ -179,6 +203,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case tea.WindowSizeMsg:
 		m.tui.UpdateSize(msg)
+
+	case popup.ChoiceResultMsg:
+		m.popup = nil
+		if msg.Result {
+			return m, tea.Quit
+		}
 	}
 
 	var cmdF tea.Cmd
@@ -190,6 +220,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
+	if m.popup != nil {
+		return m.popup.View()
+	}
 	return m.tui.View()
 }
 
@@ -341,8 +374,8 @@ func (b box) View() string {
 	if b.activeTab == 0 {
 		content = b.viewport.View()
 	} else {
-    content = emptyMessage.Render("No implemented yet")
-  }
+		content = emptyMessage.Render("No implemented yet")
+	}
 
 	doc.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(content))
 	return docStyle.Render(doc.String())
