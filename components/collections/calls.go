@@ -40,7 +40,6 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 	fmt.Fprint(w, fn(str))
 }
 
-
 type callModel struct {
 	list list.Model
 }
@@ -48,17 +47,11 @@ type callModel struct {
 func NewCallModel() callModel {
 
 	// Make initial list of items
-	items := []list.Item{
-		app.Call{Endpoint: "/us/90210"},
-		app.Call{Endpoint: "/us/ma/belmont"},
-		app.Call{Endpoint: "/us/ma/boston"},
-	}
-
-	groceryList := list.New(items, itemDelegate{}, 0, 0)
+	groceryList := list.New([]list.Item{}, itemDelegate{}, 0, 0)
 	groceryList.Styles.Title = titleStyle
 	groceryList.Styles.TitleBar = titleBarStyle
 	groceryList.Help.ShowAll = true
-	groceryList.SetShowHelp(true)
+	groceryList.SetShowHelp(false)
 	groceryList.SetShowTitle(false)
 	groceryList.SetShowStatusBar(false)
 	groceryList.AdditionalFullHelpKeys = func() []key.Binding {
@@ -75,6 +68,17 @@ func NewCallModel() callModel {
 	}
 }
 
+func (m *callModel) RefreshItems() tea.Cmd {
+	items := []list.Item{}
+	if app.Application.SelectedCollection != nil {
+		for _, call := range app.Application.SelectedCollection.Calls {
+			items = append(items, call)
+		}
+	}
+
+	return m.list.SetItems(items)
+}
+
 func (m callModel) Init() tea.Cmd {
 	return tea.EnterAltScreen
 }
@@ -85,8 +89,7 @@ func (m callModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		h, v := appStyle.GetFrameSize()
-		m.list.SetSize(msg.Width-h-2, msg.Height-v-5)
-		println(msg.Height)
+		m.list.SetSize(msg.Width-h-2, msg.Height-v-6)
 	case tea.KeyMsg:
 
 		if m.list.FilterState() == list.Filtering {
@@ -103,7 +106,6 @@ func (m callModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	// This will also call our delegate's update function.
 	newListModel, cmd := m.list.Update(msg)
 	m.list = newListModel
 	cmds = append(cmds, cmd)

@@ -1,5 +1,12 @@
 package app
 
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
+)
+
 type Listener interface {
 	OnChange(app App)
 }
@@ -30,10 +37,13 @@ type App struct {
 	SelectedCollection *Collection
 	SelectedCall       *Call
 	status_code        int
+	Collections        []Collection
 }
 
 // create a new Application singleton
-var Application = App{}
+var Application = App{
+	Collections: ReadCollectionsFromJSON(),
+}
 
 func notify() {
 	for _, listener := range Application.listeners {
@@ -64,4 +74,27 @@ func SetSelectedCollection(collection *Collection) {
 func SetSelectedCall(call *Call) {
 	Application.SelectedCall = call
 	notify()
+}
+
+// Read collections from a JSON file
+func ReadCollectionsFromJSON() []Collection {
+	var collections []Collection
+	configDir, _ := os.UserConfigDir()
+
+	os.MkdirAll(filepath.Join(configDir, "restman"), os.ModePerm)
+
+	file, err := os.ReadFile(filepath.Join(configDir, "restman", "collections.json"))
+	if err != nil {
+		fmt.Println(err)
+	}
+	json.Unmarshal(file, &collections)
+
+	return collections
+}
+
+func SaveCollectionsToJSON() {
+  configDir, _ := os.UserConfigDir()
+  os.MkdirAll(filepath.Join(configDir, "restman"), os.ModePerm)
+  file, _ := json.MarshalIndent(Application.Collections, "", " ")
+  _ = os.WriteFile(filepath.Join(configDir, "restman", "collections.json"), file, 0644)
 }

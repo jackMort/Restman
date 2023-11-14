@@ -38,7 +38,7 @@ var (
 type collections struct {
 	focused bool
 	mod     tea.Model
-	smod    tea.Model
+	smod    callModel
 	state   app.App
 }
 
@@ -66,16 +66,18 @@ func (m collections) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		focused.Height(msg.Height - 2)
 
 		newSModel, cmd2 := m.smod.Update(msg)
-		m.smod = newSModel
+		m.smod = newSModel.(callModel)
 
 		cmds = append(cmds, cmd2)
 	}
 
 	if app.Application.SelectedCollection != nil {
+		cmd3 := m.smod.RefreshItems()
 		newSModel, cmd2 := m.smod.Update(msg)
-		m.smod = newSModel
+		m.smod = newSModel.(callModel)
 
 		cmds = append(cmds, cmd2)
+		cmds = append(cmds, cmd3)
 	} else {
 		newModel, cmd := m.mod.Update(msg)
 		m.mod = newModel

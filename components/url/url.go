@@ -16,13 +16,11 @@ import (
 
 var (
 	normal = lipgloss.NewStyle().
-		Bold(true).
 		Border(lipgloss.NormalBorder()).
 		BorderForeground(config.COLOR_SUBTLE).
 		PaddingLeft(1)
 
 	focused = lipgloss.NewStyle().
-		Bold(true).
 		Border(lipgloss.NormalBorder()).
 		BorderForeground(config.COLOR_HIGHLIGHT).
 		PaddingLeft(1)
@@ -36,6 +34,10 @@ var (
 			Bold(true).
 			Foreground(config.COLOR_FOREGROUND).
 			Background(config.COLOR_HIGHLIGHT)
+
+	promptStyle = lipgloss.NewStyle().
+			Bold(true).
+			Foreground(config.COLOR_HIGHLIGHT)
 
 	title = lipgloss.NewStyle().
 		Bold(true).
@@ -63,15 +65,17 @@ var methodColors = map[string]string{
 }
 
 type url struct {
-	focused bool
-	width   int
-	method  string
-	t       textinput.Model
+	focused     bool
+	width       int
+	method      string
+	t           textinput.Model
+	defaultText string
 }
 
 func New() url {
 	t := textinput.New()
-	t.Prompt = ""
+	t.PromptStyle = promptStyle
+  t.Prompt = "{COLLECTION_BASE_URL}"
 	return url{
 		t:      t,
 		method: GET,
@@ -93,7 +97,7 @@ func (m url) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		send := buttonStyle.Render(" SEND ")
 
 		m.t.Width = m.width - lipgloss.Width(method) - lipgloss.Width(send) - 7
-		m.t.Placeholder = "http://google.pl" + strings.Repeat(" ", m.t.Width-15)
+		m.t.Placeholder = "/some/endpoint" + strings.Repeat(" ", m.t.Width-15-len(m.t.Prompt))
 
 	case config.WindowFocusedMsg:
 		m.focused = msg.State
@@ -102,6 +106,16 @@ func (m url) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		} else {
 			m.t.Blur()
 		}
+	case config.AppStateChanged:
+		if app.Application.SelectedCollection != nil {
+			m.t.Prompt = app.Application.SelectedCollection.BaseUrl
+		}
+
+		if app.Application.SelectedCall != nil && app.Application.SelectedCall.Endpoint != m.defaultText {
+			m.defaultText = app.Application.SelectedCall.Endpoint
+			m.t.SetValue(m.defaultText)
+		}
+
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "enter":
@@ -158,13 +172,9 @@ func (m url) View() string {
 	methodStyle.Background(lipgloss.Color(methodColors[m.method]))
 	method := methodStyle.Render(" " + m.method + " ")
 	send := buttonStyle.Render(" SEND ")
-	if app.Application.SelectedCall != nil {
 
-		m.t.Prompt = app.Application.SelectedCall.Endpoint
-	}
-
-	m.t.Width = m.width - lipgloss.Width(method) - lipgloss.Width(send) - 7
-	m.t.Placeholder = "http://google.pl" + strings.Repeat(" ", m.t.Width-15-len(m.t.Prompt))
+	m.t.Width = m.width - lipgloss.Width(method) - lipgloss.Width(send) - 7 - len(m.t.Prompt)
+	m.t.Placeholder = "/some/endpoint" + strings.Repeat(" ", m.t.Width-15-len(m.t.Prompt))
 
 	v := m.t.View()
 

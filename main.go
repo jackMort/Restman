@@ -9,6 +9,7 @@ import (
 	"restman/components/config"
 	"restman/components/footer"
 	"restman/components/url"
+	"strings"
 
 	"github.com/TylerBrock/colorjson"
 	"github.com/charmbracelet/bubbles/viewport"
@@ -45,6 +46,8 @@ func stripErr(n boxer.Node, _ error) boxer.Node {
 
 func main() {
 	middle := box{title: "Results"}
+	middle.Tabs = []string{"Results", "Params", "Headers"}
+	middle.TabContent = []string{"Lip Gloss Tab", "Blush Tab", "Eye Shadow Tab", "Mascara Tab", "Foundation Tab"}
 	url := url.New()
 	colBox := collections.New()
 	footerBox := footer.New()
@@ -179,9 +182,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.tui.UpdateSize(msg)
 	}
 
-  var cmdF tea.Cmd
+	var cmdF tea.Cmd
 	m.tui.ModelMap["footer"], cmdF = m.tui.ModelMap["footer"].Update(msg)
-  cmds = append(cmds, cmdF)
+	cmds = append(cmds, cmdF)
 
 	cmds = append(cmds, cmd)
 	return m, tea.Batch(cmds...)
@@ -191,18 +194,46 @@ func (m model) View() string {
 	return m.tui.View()
 }
 
+func tabBorderWithBottom(left, middle, right string) lipgloss.Border {
+	border := lipgloss.RoundedBorder()
+	border.BottomLeft = left
+	border.Bottom = middle
+	border.BottomRight = right
+	return border
+}
+
+var (
+	inactiveTabBorder = tabBorderWithBottom("┴", "─", "┴")
+	activeTabBorder   = tabBorderWithBottom("┘", " ", "└")
+	docStyle          = lipgloss.NewStyle()
+	highlightColor    = lipgloss.AdaptiveColor{Light: "#874BFD", Dark: "#7D56F4"}
+	inactiveTabStyle  = lipgloss.NewStyle().Border(inactiveTabBorder, true).BorderForeground(highlightColor).Padding(0, 1)
+	activeTabStyle    = inactiveTabStyle.Copy().Border(activeTabBorder, true)
+	windowStyle       = lipgloss.NewStyle().BorderForeground(highlightColor).Padding(2, 0).Align(lipgloss.Center).Border(lipgloss.NormalBorder()).UnsetBorderTop()
+	tabGap            = inactiveTabStyle.Copy().
+				BorderTop(false).
+				BorderLeft(false).
+				BorderRight(false)
+)
+
 type box struct {
-	title    string
-	focused  bool
-	body     string
-	width    int
-	height   int
-	viewport viewport.Model
+	title      string
+	focused    bool
+	body       string
+	width      int
+	height     int
+	viewport   viewport.Model
+	Tabs       []string
+	TabContent []string
+	activeTab  int
 }
 
 // satisfy the tea.Model interface
 func (b box) Init() tea.Cmd {
 	b.viewport = viewport.New(10, 10)
+	b.activeTab = 1
+	b.Tabs = []string{"Lip Gloss", "Blush", "Eye Shadow", "Mascara", "Foundation"}
+	b.TabContent = []string{"Lip Gloss Tab", "Blush Tab", "Eye Shadow Tab", "Mascara Tab", "Foundation Tab"}
 	return nil
 }
 
@@ -243,22 +274,56 @@ func (b box) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (b box) View() string {
-	buttons := lipgloss.JoinHorizontal(lipgloss.Left,
-		listHeader("Response"), " ",
-		listHeader("Results"), " ",
-		fmt.Sprintf("%3.f%%", b.viewport.ScrollPercent()*100),
-	)
+	doc := strings.Builder{}
 
-	b.viewport.Width = b.width - 2
-	b.viewport.Height = b.height - 4
+	var renderedTabs []string
 
-	content := lipgloss.JoinVertical(lipgloss.Left,
-		buttons,
-		b.viewport.View(),
-	)
+	for i, t := range b.Tabs {
+		var style lipgloss.Style
+		isFirst, isLast, isActive := i == 0, i == len(b.Tabs)-1, i == b.activeTab
+		if isActive {
+			style = activeTabStyle.Copy()
+		} else {
+			style = inactiveTabStyle.Copy()
+		}
+		border, _, _, _, _ := style.GetBorder()
+		if isFirst && isActive {
+			border.BottomLeft = "│"
+		} else if isFirst && !isActive {
+			border.BottomLeft = "├"
+		} else if isLast && isActive {
+			border.BottomRight = "│"
+		}
 
-	if b.focused {
-		return testStyleFocused.Render(content)
+		style = style.Border(border)
+		renderedTabs = append(renderedTabs, style.Render(t))
 	}
-	return testStyle.Render(content)
+	renderedTabs = append(renderedTabs, tabGap.Render(strings.Repeat(" ", b.width-38)))
+
+  windowStyle.Height(b.height - 4)
+
+	style := inactiveTabStyle.Copy()
+	border, _, _, _, _ := style.GetBorder()
+	border.Right = " "
+	border.BottomRight = "┐"
+	style = style.Border(border).BorderTop(false).BorderLeft(false)
+	renderedTabs = append(renderedTabs, style.Render(" "))
+	row := lipgloss.JoinHorizontal(lipgloss.Bottom, renderedTabs...)
+	doc.WriteString(row)
+  doc.WriteString("\n")
+	doc.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(b.TabContent[b.activeTab]))
+	return docStyle.Render(doc.String())
+
+	// b.viewport.Width = b.width - 2
+	// b.viewport.Height = b.height - 4
+
+	// content := lipgloss.JoinVertical(lipgloss.Left,
+	// 	buttons,
+	// 	b.viewport.View(),
+	// )
+
+	// if b.focused {
+	// 	return testStyleFocused.Render(content)
+	// }
+	// return testStyle.Render(content)
 }

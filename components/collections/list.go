@@ -72,8 +72,9 @@ func NewModel() model {
 	)
 
 	// Make initial list of items
-	items := []list.Item{
-		app.Collection{Name: "Zip Codes", BaseUrl: "https://zipopotam.us"},
+	items := []list.Item{}
+	for _, collection := range app.Application.Collections {
+		items = append(items, collection)
 	}
 
 	// Setup list
