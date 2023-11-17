@@ -2,8 +2,7 @@ package footer
 
 import (
 	"restman/app"
-	"restman/components/config"
-	"strconv"
+	"time"
 
 	"github.com/charmbracelet/bubbles/stopwatch"
 	tea "github.com/charmbracelet/bubbletea"
@@ -16,6 +15,8 @@ type model struct {
 	statusbar statusbar.Model
 	stopwatch stopwatch.Model
 	height    int
+	url       string
+	loading   bool
 }
 
 // New creates a new instance of the UI.
@@ -41,7 +42,7 @@ func New() model {
 
 	return model{
 		statusbar: sb,
-		stopwatch: stopwatch.New(),
+		stopwatch: stopwatch.NewWithInterval(time.Millisecond),
 	}
 }
 
@@ -56,13 +57,31 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.height = msg.Height
 		m.statusbar.SetSize(msg.Width)
-	case config.AppStateChanged:
-		cmd := m.stopwatch.Start()
-		return m, cmd
+
+	case app.OnLoadingMsg:
+		m.url = msg.Url
+		m.loading = true
+		return m, tea.Batch(m.stopwatch.Reset(), m.stopwatch.Start())
+
+	case app.OnResponseMsg:
+		m.loading = false
+		return m, m.stopwatch.Stop()
+
 	}
 
 	var cmd tea.Cmd
-	code, color := app.GetStatus()
+
+	var status string
+	var color string
+	if m.loading {
+		status = "󰞉 LOADING"
+		color = "#F59E0B"
+	} else {
+		status = "󰞉 STATUS: " + "SUCCESS"
+		color = "#34D399"
+
+	}
+
 	m.statusbar.SetColors(
 		statusbar.ColorConfig{
 			Foreground: lipgloss.AdaptiveColor{Dark: "#ffffff", Light: "#ffffff"},
@@ -81,7 +100,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			Background: lipgloss.AdaptiveColor{Light: "#6124DF", Dark: "#6124DF"},
 		},
 	)
-	m.statusbar.SetContent("󰞉 STATUS: "+strconv.Itoa(code), app.GetFullUrl(), "", " 805 ms")
+
+	m.statusbar.SetContent(status, m.url, "", " "+m.stopwatch.View())
 	m.stopwatch, cmd = m.stopwatch.Update(msg)
 	return m, cmd
 }

@@ -68,25 +68,21 @@ func NewCallModel() callModel {
 	}
 }
 
-func (m *callModel) RefreshItems() tea.Cmd {
-	items := []list.Item{}
-	if app.Application.SelectedCollection != nil {
-		for _, call := range app.Application.SelectedCollection.Calls {
-			items = append(items, call)
-		}
-	}
-
-	return m.list.SetItems(items)
-}
-
 func (m callModel) Init() tea.Cmd {
-	return tea.EnterAltScreen
+	return nil
 }
 
 func (m callModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
+	case app.CollectionSelectedMsg:
+		items := []list.Item{}
+		for _, call := range msg.Collection.Calls {
+			items = append(items, call)
+		}
+		return m, m.list.SetItems(items)
+
 	case tea.WindowSizeMsg:
 		h, v := appStyle.GetFrameSize()
 		m.list.SetSize(msg.Width-h-2, msg.Height-v-6)
@@ -98,11 +94,11 @@ func (m callModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		switch msg.String() {
 		case "ctrl+h":
-			app.SetSelectedCollection(nil)
+			return m, app.SetSelectedCollection(nil)
 
 		case "enter":
 			i, _ := m.list.SelectedItem().(app.Call)
-			app.SetSelectedCall(&i)
+			return m, app.SetSelectedCall(&i)
 		}
 	}
 

@@ -19,7 +19,7 @@ func newItemDelegate(keys *delegateKeyMap) list.DefaultDelegate {
 		case tea.KeyMsg:
 			switch {
 			case key.Matches(msg, keys.choose):
-				app.SetSelectedCollection(&i)
+				return app.SetSelectedCollection(&i)
 
 			case key.Matches(msg, keys.remove):
 				index := m.Index()

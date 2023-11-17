@@ -1,12 +1,8 @@
 package url
 
 import (
-	"fmt"
-	"io"
-	"os"
 	"restman/app"
 	"restman/components/config"
-	"restman/utils"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -77,6 +73,8 @@ type url struct {
 	method      string
 	t           textinput.Model
 	defaultText string
+	call        *app.Call
+	collection  *app.Collection
 }
 
 func New() url {
@@ -95,6 +93,20 @@ func (m url) Init() tea.Cmd {
 
 func (m url) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+
+	case app.CollectionSelectedMsg:
+		m.collection = msg.Collection
+		if m.collection != nil {
+			m.t.Prompt = m.collection.BaseUrl
+		} else {
+			m.call = nil
+		}
+
+	case app.CallSelectedMsg:
+		m.call = msg.Call
+		m.defaultText = m.call.Endpoint
+		m.t.SetValue(m.defaultText)
+
 	case tea.WindowSizeMsg:
 		normal.Width(msg.Width - 2)
 		focused.Width(msg.Width - 2)
@@ -113,42 +125,12 @@ func (m url) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		} else {
 			m.t.Blur()
 		}
-	case config.AppStateChanged:
-		if app.Application.SelectedCollection != nil {
-			m.t.Prompt = app.Application.SelectedCollection.BaseUrl
-		}
-
-		if app.Application.SelectedCall != nil && app.Application.SelectedCall.Endpoint != m.defaultText {
-			m.defaultText = app.Application.SelectedCall.Endpoint
-			m.t.SetValue(m.defaultText)
-		}
 
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "enter":
-			app.SetUrl(m.t.Value())
-
-			params := utils.HTTPRequestParams{
-				Method:   "GET",
-				URL:      app.GetFullUrl(),
-				Username: "u",
-				Password: "p",
-				Headers: map[string]string{
-					"Content-Type": "application/json",
-				},
-			}
-			response, err := utils.MakeRequest(params)
-			if err != nil {
-				fmt.Println("Error making request:", err)
-				os.Exit(1)
-			}
-			defer response.Body.Close()
-			body, err := io.ReadAll(response.Body)
-			if err != nil {
-				fmt.Println("Error reading response body:", err)
-				os.Exit(1)
-			}
-			app.SetResponse(string(body), response.StatusCode)
+			url := m.collection.BaseUrl + m.t.Value()
+			return m, app.GetResponse(url)
 
 		case "ctrl+n":
 			// cycle over methods
@@ -181,7 +163,7 @@ func (m url) View() string {
 	send := buttonStyle.Render(" SEND ")
 
 	m.t.Width = m.width - lipgloss.Width(method) - lipgloss.Width(send) - 7 - len(m.t.Prompt)
-	m.t.Placeholder = "/some/endpoint" + strings.Repeat(" ", MaxInt(0, m.t.Width - 13))
+	m.t.Placeholder = "/some/endpoint" + strings.Repeat(" ", MaxInt(0, m.t.Width-13))
 
 	v := m.t.View()
 

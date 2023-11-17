@@ -36,10 +36,11 @@ var (
 )
 
 type collections struct {
-	focused bool
-	mod     tea.Model
-	smod    callModel
-	state   app.App
+	focused    bool
+	mod        tea.Model
+	smod       callModel
+	state      app.App
+	collection *app.Collection
 }
 
 func New() collections {
@@ -56,13 +57,17 @@ func (m collections) Init() tea.Cmd {
 func (m collections) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
+
+	case app.CollectionSelectedMsg:
+		m.collection = msg.Collection
+
 	case config.WindowFocusedMsg:
 		m.focused = msg.State
 
 	case tea.WindowSizeMsg:
-		normal.Width(msg.Width - 2)
+		normal.Width(msg.Width - 3)
 		normal.Height(msg.Height - 2)
-		focused.Width(msg.Width - 2)
+		focused.Width(msg.Width - 3)
 		focused.Height(msg.Height - 2)
 
 		newSModel, cmd2 := m.smod.Update(msg)
@@ -71,13 +76,11 @@ func (m collections) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, cmd2)
 	}
 
-	if app.Application.SelectedCollection != nil {
-		cmd3 := m.smod.RefreshItems()
+	if m.collection != nil {
 		newSModel, cmd2 := m.smod.Update(msg)
 		m.smod = newSModel.(callModel)
 
 		cmds = append(cmds, cmd2)
-		cmds = append(cmds, cmd3)
 	} else {
 		newModel, cmd := m.mod.Update(msg)
 		m.mod = newModel
@@ -93,14 +96,11 @@ func (m collections) View() string {
 		style = focused
 	}
 
-	// buttons := lipgloss.JoinHorizontal(lipgloss.Left,
-	// )
-
-	if app.Application.SelectedCollection != nil {
+	if m.collection != nil {
 		header := config.BoxHeader.Copy().MaxWidth(25).
-			Render("󰅁 " + app.Application.SelectedCollection.Name)
+			Render("󰅁 " + m.collection.Name)
 		description := config.BoxDescription.Copy().MaxWidth(25).
-			Render(app.Application.SelectedCollection.BaseUrl)
+			Render(m.collection.BaseUrl)
 
 		content := lipgloss.JoinVertical(
 			lipgloss.Left,

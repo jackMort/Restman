@@ -73,9 +73,9 @@ func NewModel() model {
 
 	// Make initial list of items
 	items := []list.Item{}
-	for _, collection := range app.Application.Collections {
-		items = append(items, collection)
-	}
+	// for _, collection := range app.Application.Collections {
+	// 	items = append(items, collection)
+	// }
 
 	// Setup list
 	delegate := newItemDelegate(delegateKeys)
@@ -113,6 +113,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
+	case app.FetchCollectionsSuccessMsg:
+		items := []list.Item{}
+		for _, call := range msg.Collections {
+			items = append(items, call)
+		}
+		return m, m.list.SetItems(items)
+
 	case tea.WindowSizeMsg:
 		h, v := appStyle.GetFrameSize()
 		m.list.SetSize(msg.Width-h-4, msg.Height-v-3)

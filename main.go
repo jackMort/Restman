@@ -53,7 +53,7 @@ func main() {
 	footerBox := footer.New()
 
 	// layout-tree defintion
-	m := model{tui: boxer.Boxer{}}
+	m := model{tui: boxer.Boxer{}, backend: app.New()}
 
 	centerNode := boxer.CreateNoBorderNode()
 	centerNode.VerticalStacked = true
@@ -104,8 +104,6 @@ func main() {
 		defer f.Close()
 	}
 
-	app.AddListener(m)
-
 	p := tea.NewProgram(
 		m,
 		tea.WithAltScreen(),       // use the full size of the terminal in its "alternate screen buffer"
@@ -120,18 +118,13 @@ func main() {
 
 type model struct {
 	tui     boxer.Boxer
+	backend *app.App
 	focused string
 	popup   tea.Model
 }
 
-func (m model) OnChange(ap app.App) {
-	for key, element := range m.tui.ModelMap {
-		m.tui.ModelMap[key], _ = element.Update(config.AppStateChanged{State: ap})
-	}
-}
-
 func (m model) Init() tea.Cmd {
-	return nil
+	return m.backend.ReadCollectionsFromJSON()
 }
 
 func (m *model) Next() (tea.Model, tea.Cmd) {
@@ -195,10 +188,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m, cmd := m.Next()
 				return m, cmd
 
-			case "p":
-			}
-			if m.focused != "" {
+			default:
 				m.tui.ModelMap[m.focused], cmd = m.tui.ModelMap[m.focused].Update(msg)
+
 			}
 		}
 	case tea.WindowSizeMsg:
@@ -208,6 +200,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.popup = nil
 		if msg.Result {
 			return m, tea.Quit
+		}
+	default:
+		// TODO: is this make sense?
+		for key, element := range m.tui.ModelMap {
+			m.tui.ModelMap[key], _ = element.Update(msg)
 		}
 	}
 
@@ -291,9 +288,9 @@ func (b box) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case config.WindowFocusedMsg:
 		b.focused = msg.State
 
-	case config.AppStateChanged:
-		if msg.State.Body != "" {
-			b.body = msg.State.Body
+	case app.OnResponseMsg:
+		if msg.Body != "" {
+			b.body = msg.Body
 
 			// Create an intersting JSON object to marshal in a pretty format
 			f := colorjson.NewFormatter()
