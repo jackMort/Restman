@@ -188,7 +188,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			switch msg.String() {
 			case "q", "ctrl+c":
-				width := 60
+				width := 100
 				m.popup = popup.NewChoice(m.View(), width, "Are you sure, you want to quit?", false)
 				return m, m.popup.Init()
 			case "tab":

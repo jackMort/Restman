@@ -45,6 +45,13 @@ var (
 		Foreground(config.COLOR_HIGHLIGHT)
 )
 
+func MaxInt(x, y int) int {
+	if x > y {
+		return x
+	}
+	return y
+}
+
 const (
 	GET    = "GET"
 	POST   = "POST"
@@ -75,7 +82,7 @@ type url struct {
 func New() url {
 	t := textinput.New()
 	t.PromptStyle = promptStyle
-  t.Prompt = "{COLLECTION_BASE_URL}"
+	t.Prompt = "{COLLECTION_BASE_URL}"
 	return url{
 		t:      t,
 		method: GET,
@@ -97,7 +104,7 @@ func (m url) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		send := buttonStyle.Render(" SEND ")
 
 		m.t.Width = m.width - lipgloss.Width(method) - lipgloss.Width(send) - 7
-		m.t.Placeholder = "/some/endpoint" + strings.Repeat(" ", m.t.Width-15-len(m.t.Prompt))
+		m.t.Placeholder = "/some/endpoint" + strings.Repeat(" ", MaxInt(0, m.t.Width-13))
 
 	case config.WindowFocusedMsg:
 		m.focused = msg.State
@@ -174,7 +181,7 @@ func (m url) View() string {
 	send := buttonStyle.Render(" SEND ")
 
 	m.t.Width = m.width - lipgloss.Width(method) - lipgloss.Width(send) - 7 - len(m.t.Prompt)
-	m.t.Placeholder = "/some/endpoint" + strings.Repeat(" ", m.t.Width-15-len(m.t.Prompt))
+	m.t.Placeholder = "/some/endpoint" + strings.Repeat(" ", MaxInt(0, m.t.Width - 13))
 
 	v := m.t.View()
 

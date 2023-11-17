@@ -97,10 +97,15 @@ func (m collections) View() string {
 	// )
 
 	if app.Application.SelectedCollection != nil {
+		header := config.BoxHeader.Copy().MaxWidth(25).
+			Render("󰅁 " + app.Application.SelectedCollection.Name)
+		description := config.BoxDescription.Copy().MaxWidth(25).
+			Render(app.Application.SelectedCollection.BaseUrl)
+
 		content := lipgloss.JoinVertical(
 			lipgloss.Left,
-			config.BoxHeader("󰅁 "+app.Application.SelectedCollection.Name),
-			config.BoxDescription(app.Application.SelectedCollection.BaseUrl),
+			header,
+			description,
 			m.smod.View(),
 		)
 		return style.Render(content)
