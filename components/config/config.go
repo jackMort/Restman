@@ -26,6 +26,16 @@ var BoxDescription = lipgloss.NewStyle().
 	Foreground(COLOR_SUBTLE).
 	Italic(true)
 
+var ButtonStyle = lipgloss.NewStyle().
+	Foreground(COLOR_FOREGROUND).
+	Background(COLOR_GRAY).
+	Padding(0, 2)
+
+var ActiveButtonStyle = ButtonStyle.Copy().
+	Foreground(COLOR_FOREGROUND).
+	Background(COLOR_HIGHLIGHT).
+	Underline(true)
+
 type WindowFocusedMsg struct {
 	State bool
 }

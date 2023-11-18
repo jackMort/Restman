@@ -1,0 +1,152 @@
+package collections
+
+import (
+	"restman/app"
+	"restman/components/config"
+	"restman/components/popup"
+
+	"github.com/charmbracelet/bubbles/textinput"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+)
+
+const (
+	TITLE_IDX = iota
+	BASE_URL_IDX
+)
+
+var (
+	inputStyle = lipgloss.NewStyle().
+			Foreground(config.COLOR_FOREGROUND)
+
+	general = lipgloss.NewStyle().
+		UnsetAlign().
+		Padding(0, 1, 0, 1).
+		Foreground(config.COLOR_FOREGROUND).
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(config.COLOR_HIGHLIGHT)
+)
+
+// CreateResultMsg is the message sent when a choice is made.
+type CreateResultMsg struct {
+	Result bool
+}
+
+// Create is a popup that presents a yes/no choice to the user.
+type Create struct {
+	overlay popup.Overlay
+	inputs  []textinput.Model
+	focused int
+	err     error
+}
+
+func NewCreate(bgRaw string, width int) Create {
+	var inputs []textinput.Model = make([]textinput.Model, 2)
+	inputs[TITLE_IDX] = textinput.New()
+	inputs[TITLE_IDX].Placeholder = "My Collection"
+	inputs[TITLE_IDX].Focus()
+	inputs[TITLE_IDX].CharLimit = 20
+	inputs[TITLE_IDX].Width = 30
+	inputs[TITLE_IDX].Prompt = ""
+
+	inputs[BASE_URL_IDX] = textinput.New()
+	inputs[BASE_URL_IDX].Placeholder = "https://sampleapi.com/api/v1"
+	inputs[BASE_URL_IDX].CharLimit = 20
+	inputs[BASE_URL_IDX].Width = 30
+	inputs[BASE_URL_IDX].Prompt = ""
+
+	return Create{
+		overlay: popup.NewOverlay(bgRaw, width, 13),
+		inputs:  inputs,
+		focused: 0,
+	}
+}
+
+// Init initializes the popup.
+func (c Create) Init() tea.Cmd {
+	return textinput.Blink
+}
+
+// nextInput focuses the next input field
+func (c *Create) nextInput() {
+	c.focused = (c.focused + 1) % len(c.inputs)
+}
+
+// prevInput focuses the previous input field
+func (c *Create) prevInput() {
+	c.focused--
+	// Wrap around
+	if c.focused < 0 {
+		c.focused = len(c.inputs) - 1
+	}
+}
+
+// Update handles messages.
+func (c Create) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmds []tea.Cmd = make([]tea.Cmd, len(c.inputs))
+
+	if msg, ok := msg.(tea.KeyMsg); ok {
+		switch msg.Type {
+		case tea.KeyEnter:
+			return c, tea.Batch(
+				app.CreateCollection(
+					c.inputs[TITLE_IDX].Value(),
+					c.inputs[BASE_URL_IDX].Value(),
+				),
+				c.makeChoice(),
+			)
+		case tea.KeyCtrlC, tea.KeyEsc:
+			return c, c.makeChoice()
+		case tea.KeyShiftTab, tea.KeyCtrlP:
+			c.prevInput()
+		case tea.KeyTab, tea.KeyCtrlN:
+			c.nextInput()
+		}
+		for i := range c.inputs {
+			c.inputs[i].Blur()
+		}
+		c.inputs[c.focused].Focus()
+	}
+
+	for i := range c.inputs {
+		c.inputs[i], cmds[i] = c.inputs[i].Update(msg)
+	}
+
+	return c, tea.Batch(cmds...)
+}
+
+// View renders the popup.
+func (c Create) View() string {
+	okButton := config.ActiveButtonStyle.Render("Save")
+	cancelButton := config.ButtonStyle.Render("Cancel")
+	buttons := lipgloss.PlaceHorizontal(
+		c.overlay.Width(),
+		lipgloss.Right,
+		lipgloss.JoinHorizontal(lipgloss.Right, okButton, " ", cancelButton),
+	)
+
+	header := config.BoxHeader.Render("󱚌 Create Collection")
+
+	inputs := lipgloss.JoinVertical(
+		lipgloss.Left,
+
+		inputStyle.Width(30).Render("Title:"),
+		c.inputs[TITLE_IDX].View(),
+		" ",
+
+		inputStyle.Width(30).Render("Base URL"),
+		c.inputs[BASE_URL_IDX].View(),
+		" ",
+		" ",
+		buttons,
+	)
+
+	ui := lipgloss.JoinVertical(lipgloss.Left, header, " ", inputs)
+	dialog := lipgloss.Place(c.overlay.Width()-2, c.overlay.Height()-2, lipgloss.Left, lipgloss.Top, ui)
+
+	return c.overlay.WrapView(general.Render(dialog))
+}
+
+func (c Create) makeChoice() tea.Cmd {
+	return func() tea.Msg { return CreateResultMsg{false} }
+}

@@ -155,3 +155,46 @@ func GetResponse(url string) tea.Cmd {
 // 	file, _ := json.MarshalIndent(Application.Collections, "", " ")
 // 	_ = os.WriteFile(filepath.Join(configDir, "restman", "collections.json"), file, 0644)
 // }
+
+func CreateCollection(title string, url string) tea.Cmd {
+	collection := Collection{Name: title, BaseUrl: url}
+
+	return tea.Batch(
+		func() tea.Msg {
+
+			var collections []Collection
+			configDir, _ := os.UserConfigDir()
+
+			os.MkdirAll(filepath.Join(configDir, "restman"), os.ModePerm)
+
+			file, err := os.ReadFile(filepath.Join(configDir, "restman", "collections.json"))
+			if err != nil {
+				fmt.Println(err)
+			}
+			json.Unmarshal(file, &collections)
+
+			collections = append(collections, collection)
+
+			file, _ = json.MarshalIndent(collections, "", " ")
+			_ = os.WriteFile(filepath.Join(configDir, "restman", "collections.json"), file, 0644)
+
+			return FetchCollectionsSuccessMsg{Collections: collections}
+		},
+		SetSelectedCollection(&collection),
+	)
+}
+
+func SaveCollections(collections []Collection) tea.Cmd {
+	return tea.Batch(
+		func() tea.Msg {
+			configDir, _ := os.UserConfigDir()
+
+			os.MkdirAll(filepath.Join(configDir, "restman"), os.ModePerm)
+
+			file, _ := json.MarshalIndent(collections, "", " ")
+			_ = os.WriteFile(filepath.Join(configDir, "restman", "collections.json"), file, 0644)
+
+			return FetchCollectionsSuccessMsg{Collections: collections}
+		},
+	)
+}

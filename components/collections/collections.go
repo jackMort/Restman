@@ -58,6 +58,11 @@ func (m collections) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 
+  case app.FetchCollectionsSuccessMsg:
+		newModel, cmd := m.mod.Update(msg)
+		m.mod = newModel
+		cmds = append(cmds, cmd)
+
 	case app.CollectionSelectedMsg:
 		m.collection = msg.Collection
 

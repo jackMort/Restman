@@ -166,6 +166,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.Result {
 			return m, tea.Quit
 		}
+
+	case collections.CreateResultMsg:
+		m.popup = nil
+		return m, nil
 	}
 
 	// If we are showing a popup, we need to update the popup
@@ -184,23 +188,25 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				width := 100
 				m.popup = popup.NewChoice(m.View(), width, "Are you sure, you want to quit?", false)
 				return m, m.popup.Init()
+
+			case "ctrl+n":
+				m.popup = collections.NewCreate(m.View(), m.tui.LayoutTree.GetWidth() - 10)
+				return m, m.popup.Init()
+
 			case "tab":
 				m, cmd := m.Next()
 				return m, cmd
 
 			default:
-				m.tui.ModelMap[m.focused], cmd = m.tui.ModelMap[m.focused].Update(msg)
+				if m.focused != "" {
+					m.tui.ModelMap[m.focused], cmd = m.tui.ModelMap[m.focused].Update(msg)
+				}
 
 			}
 		}
 	case tea.WindowSizeMsg:
 		m.tui.UpdateSize(msg)
 
-	case popup.ChoiceResultMsg:
-		m.popup = nil
-		if msg.Result {
-			return m, tea.Quit
-		}
 	default:
 		// TODO: is this make sense?
 		for key, element := range m.tui.ModelMap {

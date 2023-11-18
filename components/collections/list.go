@@ -80,7 +80,7 @@ func NewModel() model {
 	// Setup list
 	delegate := newItemDelegate(delegateKeys)
 	groceryList := list.New(items, delegate, 0, 0)
-	groceryList.Title = "Collections"
+	groceryList.Title = " Collections"
 	groceryList.Styles.Title = titleStyle
 	groceryList.Styles.TitleBar = titleBarStyle
 	groceryList.Help.ShowAll = true
