@@ -130,7 +130,10 @@ func (m url) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "enter":
 			url := m.collection.BaseUrl + m.t.Value()
-			return m, app.GetResponse(url)
+			return m, app.GetInstance().GetResponse(url)
+
+		case "ctrl+s":
+			return m, app.GetInstance().GetAndSaveEndpoint(m.t.Value())
 
 		case "ctrl+n":
 			// cycle over methods

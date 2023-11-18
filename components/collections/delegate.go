@@ -19,7 +19,7 @@ func newItemDelegate(keys *delegateKeyMap) list.DefaultDelegate {
 		case tea.KeyMsg:
 			switch {
 			case key.Matches(msg, keys.choose):
-				return app.SetSelectedCollection(&i)
+				return app.GetInstance().SetSelectedCollection(&i)
 
 			case key.Matches(msg, keys.remove):
 				index := m.Index()
@@ -33,7 +33,8 @@ func newItemDelegate(keys *delegateKeyMap) list.DefaultDelegate {
 				for _, collection := range m.Items() {
 					collections = append(collections, collection.(app.Collection))
 				}
-				return app.SaveCollections(collections)
+        // TODO 
+				return app.GetInstance().SaveCollections()
 			}
 		}
 

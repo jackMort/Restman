@@ -53,7 +53,7 @@ func main() {
 	footerBox := footer.New()
 
 	// layout-tree defintion
-	m := model{tui: boxer.Boxer{}, backend: app.New()}
+	m := model{tui: boxer.Boxer{}}
 
 	centerNode := boxer.CreateNoBorderNode()
 	centerNode.VerticalStacked = true
@@ -118,13 +118,12 @@ func main() {
 
 type model struct {
 	tui     boxer.Boxer
-	backend *app.App
 	focused string
 	popup   tea.Model
 }
 
 func (m model) Init() tea.Cmd {
-	return m.backend.ReadCollectionsFromJSON()
+	return app.GetInstance().ReadCollectionsFromJSON()
 }
 
 func (m *model) Next() (tea.Model, tea.Cmd) {

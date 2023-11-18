@@ -11,10 +11,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-type Listener interface {
-	OnChange(app App)
-}
-
 type Auth struct {
 	Username string
 	Password string
@@ -41,53 +37,23 @@ func (i Call) Description() string { return i.Method }
 func (i Call) FilterValue() string { return i.Endpoint }
 
 type App struct {
-	Url                string
-	listeners          []Listener
-	Body               string
 	SelectedCollection *Collection
 	SelectedCall       *Call
-	StatusCode         int
 	Collections        []Collection
 }
 
-func SetUrl(url string) {
-	// Application.Url = url
-}
+var instance *App
 
-func SetResponse(body string, status_code int) {
-	// Application.Body = body
-	// Application.StatusCode = status_code
-}
-
-func GetFullUrl() string {
-	return "http://gogasd.com/test"
-	// if Application.SelectedCollection != nil && Application.SelectedCall != nil {
-	// 	return Application.SelectedCollection.BaseUrl + Application.SelectedCall.Endpoint
-	// }
-	// return Application.Url
-}
-
-func GetStatus() (code int, color string) {
-	return 200, "#34D399"
-	// if Application.StatusCode > 0 && Application.StatusCode < 300 {
-	// 	return Application.StatusCode, "#34D399"
-	// } else if Application.StatusCode < 400 {
-	// 	return Application.StatusCode, "#F59E0B"
-	// } else if Application.StatusCode < 500 {
-	// 	return Application.StatusCode, "#DC2626"
-	// } else if Application.StatusCode < 600 {
-	// 	return Application.StatusCode, "#DC2626"
-	// }
-	// return Application.StatusCode, "#6124DF"
-}
-
-func New() *App {
-	return &App{}
+// GetInstance returns the singleton instance
+func GetInstance() *App {
+	if instance == nil {
+		instance = &App{}
+	}
+	return instance
 }
 
 // Read collections from a JSON file
-func (a App) ReadCollectionsFromJSON() tea.Cmd {
-	var collections []Collection
+func (a *App) ReadCollectionsFromJSON() tea.Cmd {
 	configDir, _ := os.UserConfigDir()
 
 	os.MkdirAll(filepath.Join(configDir, "restman"), os.ModePerm)
@@ -96,26 +62,28 @@ func (a App) ReadCollectionsFromJSON() tea.Cmd {
 	if err != nil {
 		fmt.Println(err)
 	}
-	json.Unmarshal(file, &collections)
+	json.Unmarshal(file, &a.Collections)
 
 	return func() tea.Msg {
-		return FetchCollectionsSuccessMsg{Collections: collections}
+		return FetchCollectionsSuccessMsg{Collections: a.Collections}
 	}
 }
 
-func SetSelectedCollection(collection *Collection) tea.Cmd {
+func (a *App) SetSelectedCollection(collection *Collection) tea.Cmd {
+	a.SelectedCollection = collection
 	return func() tea.Msg {
-		return CollectionSelectedMsg{Collection: collection}
+		return CollectionSelectedMsg{Collection: a.SelectedCollection}
 	}
 }
 
-func SetSelectedCall(call *Call) tea.Cmd {
+func (a *App) SetSelectedCall(call *Call) tea.Cmd {
+	a.SelectedCall = call
 	return func() tea.Msg {
-		return CallSelectedMsg{Call: call}
+		return CallSelectedMsg{Call: a.SelectedCall}
 	}
 }
 
-func GetResponse(url string) tea.Cmd {
+func (a *App) GetResponse(url string) tea.Cmd {
 	return tea.Batch(
 		// set loading
 		func() tea.Msg {
@@ -149,52 +117,51 @@ func GetResponse(url string) tea.Cmd {
 		})
 }
 
-// func SaveCollectionsToJSON() {
-// 	configDir, _ := os.UserConfigDir()
-// 	os.MkdirAll(filepath.Join(configDir, "restman"), os.ModePerm)
-// 	file, _ := json.MarshalIndent(Application.Collections, "", " ")
-// 	_ = os.WriteFile(filepath.Join(configDir, "restman", "collections.json"), file, 0644)
-// }
-
-func CreateCollection(title string, url string) tea.Cmd {
+func (a *App) CreateCollection(title string, url string) tea.Cmd {
 	collection := Collection{Name: title, BaseUrl: url}
 
 	return tea.Batch(
 		func() tea.Msg {
-
-			var collections []Collection
 			configDir, _ := os.UserConfigDir()
+			a.Collections = append(a.Collections, collection)
 
-			os.MkdirAll(filepath.Join(configDir, "restman"), os.ModePerm)
-
-			file, err := os.ReadFile(filepath.Join(configDir, "restman", "collections.json"))
-			if err != nil {
-				fmt.Println(err)
-			}
-			json.Unmarshal(file, &collections)
-
-			collections = append(collections, collection)
-
-			file, _ = json.MarshalIndent(collections, "", " ")
+			file, _ := json.MarshalIndent(a.Collections, "", " ")
 			_ = os.WriteFile(filepath.Join(configDir, "restman", "collections.json"), file, 0644)
 
-			return FetchCollectionsSuccessMsg{Collections: collections}
+			return FetchCollectionsSuccessMsg{Collections: a.Collections}
 		},
-		SetSelectedCollection(&collection),
+		a.SetSelectedCollection(&collection),
 	)
 }
 
-func SaveCollections(collections []Collection) tea.Cmd {
+// TODO refactor
+func (a *App) SaveCollections() tea.Cmd {
 	return tea.Batch(
 		func() tea.Msg {
 			configDir, _ := os.UserConfigDir()
 
 			os.MkdirAll(filepath.Join(configDir, "restman"), os.ModePerm)
-
-			file, _ := json.MarshalIndent(collections, "", " ")
+			file, _ := json.MarshalIndent(a.Collections, "", " ")
 			_ = os.WriteFile(filepath.Join(configDir, "restman", "collections.json"), file, 0644)
 
-			return FetchCollectionsSuccessMsg{Collections: collections}
+			return FetchCollectionsSuccessMsg{Collections: a.Collections}
 		},
+	)
+}
+
+func (a *App) GetAndSaveEndpoint(endpoint string) tea.Cmd {
+	// TODO: method
+	call := Call{Endpoint: endpoint, Method: "GET"}
+	for i, c := range a.Collections {
+		if c.Name == a.SelectedCollection.Name {
+			a.Collections[i].Calls = append(a.Collections[i].Calls, call)
+			a.SelectedCollection = &a.Collections[i]
+		}
+	}
+
+	return tea.Batch(
+		a.GetResponse(a.SelectedCollection.BaseUrl+endpoint),
+		a.SaveCollections(),
+		a.SetSelectedCollection(a.SelectedCollection),
 	)
 }

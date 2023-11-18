@@ -45,14 +45,10 @@ func NewCreate(bgRaw string, width int) Create {
 	inputs[TITLE_IDX] = textinput.New()
 	inputs[TITLE_IDX].Placeholder = "My Collection"
 	inputs[TITLE_IDX].Focus()
-	inputs[TITLE_IDX].CharLimit = 20
-	inputs[TITLE_IDX].Width = 30
 	inputs[TITLE_IDX].Prompt = ""
 
 	inputs[BASE_URL_IDX] = textinput.New()
 	inputs[BASE_URL_IDX].Placeholder = "https://sampleapi.com/api/v1"
-	inputs[BASE_URL_IDX].CharLimit = 20
-	inputs[BASE_URL_IDX].Width = 30
 	inputs[BASE_URL_IDX].Prompt = ""
 
 	return Create{
@@ -89,7 +85,7 @@ func (c Create) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.Type {
 		case tea.KeyEnter:
 			return c, tea.Batch(
-				app.CreateCollection(
+				app.GetInstance().CreateCollection(
 					c.inputs[TITLE_IDX].Value(),
 					c.inputs[BASE_URL_IDX].Value(),
 				),

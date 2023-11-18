@@ -76,6 +76,7 @@ func (m callModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
+
 	case app.CollectionSelectedMsg:
 		items := []list.Item{}
 		for _, call := range msg.Collection.Calls {
@@ -86,6 +87,7 @@ func (m callModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		h, v := appStyle.GetFrameSize()
 		m.list.SetSize(msg.Width-h-2, msg.Height-v-6)
+
 	case tea.KeyMsg:
 
 		if m.list.FilterState() == list.Filtering {
@@ -94,11 +96,11 @@ func (m callModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		switch msg.String() {
 		case "ctrl+h":
-			return m, app.SetSelectedCollection(nil)
+			return m, app.GetInstance().SetSelectedCollection(nil)
 
 		case "enter":
 			i, _ := m.list.SelectedItem().(app.Call)
-			return m, app.SetSelectedCall(&i)
+			return m, app.GetInstance().SetSelectedCall(&i)
 		}
 	}
 
