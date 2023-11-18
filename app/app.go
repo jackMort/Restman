@@ -136,17 +136,15 @@ func (a *App) CreateCollection(title string, url string) tea.Cmd {
 
 // TODO refactor
 func (a *App) SaveCollections() tea.Cmd {
-	return tea.Batch(
-		func() tea.Msg {
-			configDir, _ := os.UserConfigDir()
+	return func() tea.Msg {
+		configDir, _ := os.UserConfigDir()
 
-			os.MkdirAll(filepath.Join(configDir, "restman"), os.ModePerm)
-			file, _ := json.MarshalIndent(a.Collections, "", " ")
-			_ = os.WriteFile(filepath.Join(configDir, "restman", "collections.json"), file, 0644)
+		os.MkdirAll(filepath.Join(configDir, "restman"), os.ModePerm)
+		file, _ := json.MarshalIndent(a.Collections, "", " ")
+		_ = os.WriteFile(filepath.Join(configDir, "restman", "collections.json"), file, 0644)
 
-			return FetchCollectionsSuccessMsg{Collections: a.Collections}
-		},
-	)
+		return FetchCollectionsSuccessMsg{Collections: a.Collections}
+	}
 }
 
 func (a *App) GetAndSaveEndpoint(endpoint string) tea.Cmd {
@@ -161,6 +159,24 @@ func (a *App) GetAndSaveEndpoint(endpoint string) tea.Cmd {
 
 	return tea.Batch(
 		a.GetResponse(a.SelectedCollection.BaseUrl+endpoint),
+		a.SaveCollections(),
+		a.SetSelectedCollection(a.SelectedCollection),
+	)
+}
+
+func (a *App) RemoveCollection(collection Collection) tea.Cmd {
+	var newCollections []Collection
+	for i, c := range a.Collections {
+		if c.Name == collection.Name {
+			newCollections = append(a.Collections[:i], a.Collections[i+1:]...)
+			if a.SelectedCollection != nil && c.Name == a.SelectedCollection.Name {
+				a.SelectedCollection = nil
+			}
+		}
+	}
+	a.Collections = newCollections
+
+	return tea.Sequence(
 		a.SaveCollections(),
 		a.SetSelectedCollection(a.SelectedCollection),
 	)

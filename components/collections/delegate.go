@@ -27,14 +27,7 @@ func newItemDelegate(keys *delegateKeyMap) list.DefaultDelegate {
 				if len(m.Items()) == 0 {
 					keys.remove.SetEnabled(false)
 				}
-
-        // TODO: add some kind of storage to make all operations on backend
-				var collections = []app.Collection{}
-				for _, collection := range m.Items() {
-					collections = append(collections, collection.(app.Collection))
-				}
-        // TODO 
-				return app.GetInstance().SaveCollections()
+				return app.GetInstance().RemoveCollection(i)
 			}
 		}
 
