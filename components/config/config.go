@@ -23,7 +23,7 @@ var BoxHeader = lipgloss.NewStyle().
 	BorderForeground(COLOR_SUBTLE)
 
 var BoxDescription = lipgloss.NewStyle().
-	Foreground(COLOR_SUBTLE).
+	Foreground(lipgloss.Color("#545454")).
 	Italic(true)
 
 var ButtonStyle = lipgloss.NewStyle().

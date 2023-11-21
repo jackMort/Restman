@@ -29,11 +29,11 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 	str := list.Item(listItem).(app.Call).Title()
 
 	fn := func(s ...string) string {
-		return itemStyle.Render(" 󱂛 " + strings.Join(s, " "))
+		return itemStyle.Render(" " + strings.Join(s, " "))
 	}
 	if index == m.Index() {
 		fn = func(s ...string) string {
-			return selectedItemStyle.Render(" 󱂛 " + strings.Join(s, " "))
+			return selectedItemStyle.Render(" " + strings.Join(s, " "))
 		}
 	}
 

@@ -3,6 +3,7 @@ package url
 import (
 	"restman/app"
 	"restman/components/config"
+	"restman/utils"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -40,13 +41,6 @@ var (
 		PaddingLeft(1).
 		Foreground(config.COLOR_HIGHLIGHT)
 )
-
-func MaxInt(x, y int) int {
-	if x > y {
-		return x
-	}
-	return y
-}
 
 const (
 	GET    = "GET"
@@ -116,7 +110,7 @@ func (m url) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		send := buttonStyle.Render(" SEND ")
 
 		m.t.Width = m.width - lipgloss.Width(method) - lipgloss.Width(send) - 7
-		m.t.Placeholder = "/some/endpoint" + strings.Repeat(" ", MaxInt(0, m.t.Width-13))
+		m.t.Placeholder = "/some/endpoint" + strings.Repeat(" ", utils.MaxInt(0, m.t.Width-13))
 
 	case config.WindowFocusedMsg:
 		m.focused = msg.State
@@ -166,7 +160,7 @@ func (m url) View() string {
 	send := buttonStyle.Render(" SEND ")
 
 	m.t.Width = m.width - lipgloss.Width(method) - lipgloss.Width(send) - 7 - len(m.t.Prompt)
-	m.t.Placeholder = "/some/endpoint" + strings.Repeat(" ", MaxInt(0, m.t.Width-13))
+	m.t.Placeholder = "/some/endpoint" + strings.Repeat(" ", utils.MaxInt(0, m.t.Width-13))
 
 	v := m.t.View()
 
