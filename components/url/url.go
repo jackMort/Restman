@@ -62,6 +62,7 @@ var methodColors = map[string]string{
 }
 
 type url struct {
+  placeholder string
 	focused     bool
 	width       int
 	method      string
@@ -74,10 +75,11 @@ type url struct {
 func New() url {
 	t := textinput.New()
 	t.PromptStyle = promptStyle
-	t.Prompt = "{COLLECTION_BASE_URL}"
+	t.Prompt = ""
 	return url{
 		t:      t,
 		method: GET,
+    placeholder: "Enter URL",
 	}
 }
 
@@ -110,7 +112,7 @@ func (m url) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		send := buttonStyle.Render(" SEND ")
 
 		m.t.Width = m.width - lipgloss.Width(method) - lipgloss.Width(send) - 7
-		m.t.Placeholder = "/some/endpoint" + strings.Repeat(" ", utils.MaxInt(0, m.t.Width-13))
+		m.t.Placeholder = m.placeholder + strings.Repeat(" ", utils.MaxInt(0, m.t.Width-len(m.placeholder)))
 
 	case config.WindowFocusedMsg:
 		m.focused = msg.State
@@ -123,7 +125,7 @@ func (m url) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "enter":
-			url := m.collection.BaseUrl + m.t.Value()
+			url := m.t.Prompt + m.t.Value()
 			return m, app.GetInstance().GetResponse(url)
 
 		case "ctrl+s":
@@ -160,7 +162,7 @@ func (m url) View() string {
 	send := buttonStyle.Render(" SEND ")
 
 	m.t.Width = m.width - lipgloss.Width(method) - lipgloss.Width(send) - 7 - len(m.t.Prompt)
-	m.t.Placeholder = "/some/endpoint" + strings.Repeat(" ", utils.MaxInt(0, m.t.Width-13))
+	m.t.Placeholder = m.placeholder + strings.Repeat(" ", utils.MaxInt(0, m.t.Width-len(m.placeholder) + 1))
 
 	v := m.t.View()
 
