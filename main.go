@@ -50,7 +50,7 @@ func main() {
 	footerBox := footer.New()
 
 	// layout-tree defintion
-	m := model{tui: boxer.Boxer{}}
+	m := model{tui: boxer.Boxer{}, collections: colBox, focused: "url"}
 
 	centerNode := boxer.CreateNoBorderNode()
 	centerNode.VerticalStacked = true
@@ -68,10 +68,13 @@ func main() {
 	// middle Node
 	middleNode := boxer.CreateNoBorderNode()
 	middleNode.SizeFunc = func(node boxer.Node, widthOrHeight int) []int {
-		fmt.Errorf("widthOrHeight: %d", widthOrHeight)
+		gap := 30
+		if m.tui.ModelMap["collections"].(collections.Collections).IsMinified() {
+			gap = 6
+		}
 		return []int{
-			30,
-			widthOrHeight - 30,
+			gap,
+			widthOrHeight - gap,
 		}
 	}
 	middleNode.Children = []boxer.Node{
@@ -111,16 +114,26 @@ func main() {
 		fmt.Println("could not run program:", err)
 		os.Exit(1)
 	}
+
 }
 
 type model struct {
-	tui     boxer.Boxer
-	focused string
-	popup   tea.Model
+	tui         boxer.Boxer
+	focused     string
+	popup       tea.Model
+	collections collections.Collections
 }
 
 func (m model) Init() tea.Cmd {
-	return app.GetInstance().ReadCollectionsFromJSON()
+	var cmd tea.Cmd
+
+	m.focused = "url"
+	m.tui.ModelMap[m.focused], cmd = m.tui.ModelMap[m.focused].Update(config.WindowFocusedMsg{State: true})
+
+	return tea.Batch(
+		app.GetInstance().ReadCollectionsFromJSON(),
+		cmd,
+	)
 }
 
 func (m *model) Next() (tea.Model, tea.Cmd) {
@@ -133,17 +146,38 @@ func (m *model) Next() (tea.Model, tea.Cmd) {
 		cmds = append(cmds, cmd)
 	}
 
+	coll := m.tui.ModelMap["collections"].(collections.Collections)
+
 	switch m.focused {
 	case "collections":
 		m.focused = "url"
 	case "url":
 		m.focused = "middle"
-	case "middle":
-		m.focused = "collections"
 	default:
-		m.focused = "collections"
+		if coll.IsMinified() {
+			m.focused = "url"
+		} else {
+			m.focused = "collections"
+		}
 	}
 
+	m.tui.ModelMap[m.focused], cmd = m.tui.ModelMap[m.focused].Update(config.WindowFocusedMsg{State: true})
+
+	cmds = append(cmds, cmd)
+	return m, tea.Batch(cmds...)
+}
+
+func (m *model) SetFocused(newFocused string) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+	var cmds []tea.Cmd
+
+	if m.focused != "" {
+		var previous tea.Model = m.tui.ModelMap[m.focused]
+		m.tui.ModelMap[m.focused], cmd = previous.Update(config.WindowFocusedMsg{State: false})
+		cmds = append(cmds, cmd)
+	}
+
+	m.focused = newFocused
 	m.tui.ModelMap[m.focused], cmd = m.tui.ModelMap[m.focused].Update(config.WindowFocusedMsg{State: true})
 
 	cmds = append(cmds, cmd)
@@ -186,12 +220,26 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, m.popup.Init()
 
 			case "ctrl+n":
-				m.popup = collections.NewCreate(m.View(), utils.MinInt(m.tui.LayoutTree.GetWidth() - 30, 100))
+				m.popup = collections.NewCreate(m.View(), utils.MinInt(m.tui.LayoutTree.GetWidth()-30, 100))
 				return m, m.popup.Init()
 
 			case "tab":
 				m, cmd := m.Next()
 				return m, cmd
+
+			case "ctrl+f":
+				coll := m.tui.ModelMap["collections"].(collections.Collections)
+				minified := coll.IsMinified()
+				m.tui.ModelMap["collections"], cmd = m.tui.ModelMap["collections"].(collections.Collections).SetMinified(!minified)
+				m.tui.UpdateSize(tea.WindowSizeMsg{Width: m.tui.LayoutTree.GetWidth(), Height: m.tui.LayoutTree.GetHeight()})
+
+				if minified && m.focused != "collections" {
+					return m.SetFocused("collections")
+				}
+				if !minified && m.focused == "collections" {
+					return m.SetFocused("url")
+				}
+				return m, nil
 
 			default:
 				if m.focused != "" {
@@ -224,4 +272,3 @@ func (m model) View() string {
 	}
 	return m.tui.View()
 }
-

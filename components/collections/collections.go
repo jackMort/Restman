@@ -14,6 +14,11 @@ var (
 		BorderForeground(config.COLOR_SUBTLE).
 		PaddingLeft(1)
 
+	minified = lipgloss.NewStyle().
+			Border(lipgloss.NormalBorder()).
+			BorderForeground(config.COLOR_SUBTLE).
+			PaddingLeft(1)
+
 	focused = lipgloss.NewStyle().
 		Border(lipgloss.NormalBorder()).
 		BorderForeground(config.COLOR_HIGHLIGHT).
@@ -35,30 +40,32 @@ var (
 		Foreground(config.COLOR_HIGHLIGHT)
 )
 
-type collections struct {
+type Collections struct {
 	focused    bool
+	minified   bool
 	mod        tea.Model
 	smod       callModel
 	state      app.App
 	collection *app.Collection
 }
 
-func New() collections {
-	return collections{
-		mod:  NewModel(),
-		smod: NewCallModel(),
+func New() Collections {
+	return Collections{
+		minified: true,
+		mod:      NewModel(),
+		smod:     NewCallModel(),
 	}
 }
 
-func (m collections) Init() tea.Cmd {
+func (m Collections) Init() tea.Cmd {
 	return nil
 }
 
-func (m collections) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Collections) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 
-  case app.FetchCollectionsSuccessMsg:
+	case app.FetchCollectionsSuccessMsg:
 		newModel, cmd := m.mod.Update(msg)
 		m.mod = newModel
 		cmds = append(cmds, cmd)
@@ -74,6 +81,8 @@ func (m collections) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		normal.Height(msg.Height - 2)
 		focused.Width(msg.Width - 3)
 		focused.Height(msg.Height - 2)
+		minified.Width(msg.Width - 2)
+		minified.Height(msg.Height - 2)
 
 		newSModel, cmd2 := m.smod.Update(msg)
 		m.smod = newSModel.(callModel)
@@ -94,10 +103,23 @@ func (m collections) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m collections) View() string {
+func (m Collections) IsMinified() bool {
+	return m.minified
+}
+
+func (m Collections) SetMinified(b bool) (tea.Model, tea.Cmd) {
+	m.minified = b
+	return m.Update(nil)
+}
+
+func (m Collections) View() string {
 	style := normal
 	if m.focused {
 		style = focused
+	}
+
+	if m.minified {
+		return minified.Render("")
 	}
 
 	if m.collection != nil {
