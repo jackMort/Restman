@@ -2,8 +2,10 @@ package results
 
 import (
 	"encoding/json"
+	"net/url"
 	"restman/app"
 	"restman/components/config"
+	"restman/components/params"
 	"strings"
 
 	"github.com/TylerBrock/colorjson"
@@ -63,6 +65,7 @@ type box struct {
 	viewport  viewport.Model
 	Tabs      []string
 	activeTab int
+	url       string
 }
 
 func New() box {
@@ -101,6 +104,9 @@ func (b box) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case config.WindowFocusedMsg:
 		b.focused = msg.State
+
+	case app.OnLoadingMsg:
+		b.url = msg.Url
 
 	case app.OnResponseMsg:
 		if msg.Body != "" {
@@ -205,8 +211,24 @@ func (b box) View() string {
 				Bold(true).
 				Render(lipgloss.PlaceVertical(b.viewport.Height, lipgloss.Center, center))
 		}
+	} else if b.activeTab == 1 {
+		content = emptyMessage.Render("No url params")
+
+		u, err := url.Parse(b.url)
+		if err == nil && b.url != "" {
+			m, _ := url.ParseQuery(u.RawQuery)
+			if len(m) > 0 {
+
+				table := params.New(m, b.viewport.Width, b.viewport.Height)
+				content = lipgloss.NewStyle().
+					UnsetBold().
+					Render(
+						table.View(),
+					)
+			}
+		}
 	} else {
-		content = emptyMessage.Render("No implemented yet")
+		content = emptyMessage.Render("Not implemented yet")
 	}
 
 	doc.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(content))
