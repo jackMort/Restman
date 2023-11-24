@@ -183,7 +183,28 @@ func (b box) View() string {
 
 	var content string
 	if b.activeTab == 0 {
-		content = b.viewport.View()
+		if b.body != "" {
+			content = b.viewport.View()
+		} else {
+			icon := `
+   ____
+  /\___\
+ /\ \___\
+ \ \/ / /
+  \/_/_/
+`
+
+			message := lipgloss.JoinVertical(
+				lipgloss.Center,
+				lipgloss.NewStyle().Foreground(config.COLOR_HIGHLIGHT).Render(icon),
+				"Not sent yet")
+
+			center := lipgloss.PlaceHorizontal(b.viewport.Width, lipgloss.Center, message)
+			content = lipgloss.NewStyle().
+				Foreground(config.COLOR_GRAY).
+				Bold(true).
+				Render(lipgloss.PlaceVertical(b.viewport.Height, lipgloss.Center, center))
+		}
 	} else {
 		content = emptyMessage.Render("No implemented yet")
 	}
