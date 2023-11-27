@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/url"
 	"restman/app"
+	"restman/components/auth"
 	"restman/components/config"
 	"restman/components/params"
 	"strings"
@@ -66,6 +67,7 @@ type box struct {
 	Tabs      []string
 	activeTab int
 	url       string
+	content   tea.Model
 }
 
 func New() box {
@@ -79,6 +81,13 @@ func New() box {
 func (b box) Init() tea.Cmd {
 	b.viewport = viewport.New(10, 10)
 	b.activeTab = 1
+	return nil
+}
+
+func (b box) GetContent() tea.Model {
+	if b.activeTab == 3 {
+		return auth.New(b.viewport.Width)
+	}
 	return nil
 }
 
@@ -97,9 +106,11 @@ func (b box) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+l":
 			b.activeTab = min(b.activeTab+1, len(b.Tabs)-1)
+			b.content = b.GetContent()
 
 		case "ctrl+h":
 			b.activeTab = max(b.activeTab-1, 0)
+			b.content = b.GetContent()
 		}
 
 	case config.WindowFocusedMsg:
@@ -130,8 +141,13 @@ func (b box) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
 	b.viewport, cmd = b.viewport.Update(msg)
-
 	cmds = append(cmds, cmd)
+
+	if b.content != nil {
+		b.content, cmd = b.content.Update(msg)
+    cmds = append(cmds, cmd)
+	}
+
 	return b, tea.Batch(cmds...)
 }
 
@@ -227,6 +243,8 @@ func (b box) View() string {
 					)
 			}
 		}
+	} else if b.activeTab == 3 {
+		content = b.content.View()
 	} else {
 		content = emptyMessage.Render("Not implemented yet")
 	}

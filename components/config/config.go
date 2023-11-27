@@ -36,6 +36,10 @@ var ActiveButtonStyle = ButtonStyle.Copy().
 	Background(COLOR_HIGHLIGHT).
 	Underline(true)
 
+var EmptyMessageStyle = lipgloss.NewStyle().
+	Padding(2, 0).
+	Foreground(COLOR_GRAY)
+
 type WindowFocusedMsg struct {
 	State bool
 }
