@@ -83,6 +83,12 @@ func (a *App) SetSelectedCall(call *Call) tea.Cmd {
 	}
 }
 
+func (a *App) SetFocused(item string) tea.Cmd {
+	return func() tea.Msg {
+		return SetFocusMsg{Item: item}
+	}
+}
+
 func (a *App) GetResponse(url string) tea.Cmd {
 	return tea.Batch(
 		// set loading
@@ -159,6 +165,22 @@ func (a *App) GetAndSaveEndpoint(endpoint string) tea.Cmd {
 
 	return tea.Batch(
 		a.GetResponse(a.SelectedCollection.BaseUrl+endpoint),
+		a.SaveCollections(),
+		a.SetSelectedCollection(a.SelectedCollection),
+	)
+}
+
+func (a *App) SaveEndpoint(endpoint string) tea.Cmd {
+	// TODO: method
+	call := Call{Endpoint: endpoint, Method: "GET"}
+	for i, c := range a.Collections {
+		if c.Name == a.SelectedCollection.Name {
+			a.Collections[i].Calls = append(a.Collections[i].Calls, call)
+			a.SelectedCollection = &a.Collections[i]
+		}
+	}
+
+	return tea.Batch(
 		a.SaveCollections(),
 		a.SetSelectedCollection(a.SelectedCollection),
 	)

@@ -14,6 +14,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	zone "github.com/lrstanley/bubblezone"
 	boxer "github.com/treilik/bubbleboxer"
 )
 
@@ -44,13 +45,15 @@ func stripErr(n boxer.Node, _ error) boxer.Node {
 }
 
 func main() {
-	middle := results.New()
-	url := url.New()
-	colBox := collections.New()
-	footerBox := footer.New()
+	zone.NewGlobal()
 
 	// layout-tree defintion
-	m := model{tui: boxer.Boxer{}, collections: colBox, focused: "url"}
+	m := Model{tui: boxer.Boxer{}, focused: "url"}
+
+	url := url.New()
+	middle := results.New()
+	footerBox := footer.New()
+	colBox := collections.New()
 
 	centerNode := boxer.CreateNoBorderNode()
 	centerNode.VerticalStacked = true
@@ -117,14 +120,14 @@ func main() {
 
 }
 
-type model struct {
+type Model struct {
 	tui         boxer.Boxer
 	focused     string
 	popup       tea.Model
 	collections collections.Collections
 }
 
-func (m model) Init() tea.Cmd {
+func (m Model) Init() tea.Cmd {
 	var cmd tea.Cmd
 
 	m.focused = "url"
@@ -136,7 +139,7 @@ func (m model) Init() tea.Cmd {
 	)
 }
 
-func (m *model) Next() (tea.Model, tea.Cmd) {
+func (m *Model) Next() (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
@@ -167,7 +170,7 @@ func (m *model) Next() (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m *model) SetFocused(newFocused string) (tea.Model, tea.Cmd) {
+func (m *Model) SetFocused(newFocused string) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
@@ -184,7 +187,7 @@ func (m *model) SetFocused(newFocused string) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
 
@@ -210,6 +213,29 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// ----------------------------
 
 	switch msg := msg.(type) {
+	case tea.MouseMsg:
+		if msg.Type == tea.MouseLeft {
+			if zone.Get("url").InBounds(msg) {
+				m.SetFocused("url")
+			} else if zone.Get("collections_minified").InBounds(msg) {
+				m.tui.ModelMap["collections"], cmd = m.tui.ModelMap["collections"].(collections.Collections).SetMinified(false)
+				m.tui.UpdateSize(tea.WindowSizeMsg{Width: m.tui.LayoutTree.GetWidth(), Height: m.tui.LayoutTree.GetHeight()})
+				return m.SetFocused("collections")
+			} else if zone.Get("middle").InBounds(msg) {
+				m.SetFocused("middle")
+			} else if zone.Get("collections_minify").InBounds(msg) {
+				m.tui.ModelMap["collections"], cmd = m.tui.ModelMap["collections"].(collections.Collections).SetMinified(true)
+				m.tui.UpdateSize(tea.WindowSizeMsg{Width: m.tui.LayoutTree.GetWidth(), Height: m.tui.LayoutTree.GetHeight()})
+				return m.SetFocused("url")
+			} else if zone.Get("collections").InBounds(msg) {
+				return m.SetFocused("collections")
+			}
+		}
+
+	case app.SetFocusMsg:
+		fmt.Println("SetFocusMsg: ", msg.Item)
+		m.SetFocused(msg.Item)
+
 	case tea.KeyMsg:
 		{
 
@@ -266,9 +292,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m model) View() string {
+func (m Model) View() string {
 	if m.popup != nil {
 		return m.popup.View()
 	}
-	return m.tui.View()
+	return zone.Scan(m.tui.View())
 }

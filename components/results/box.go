@@ -13,6 +13,7 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	zone "github.com/lrstanley/bubblezone"
 )
 
 func tabBorderWithBottom(left, middle, right string) lipgloss.Border {
@@ -145,7 +146,7 @@ func (b box) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	if b.content != nil {
 		b.content, cmd = b.content.Update(msg)
-    cmds = append(cmds, cmd)
+		cmds = append(cmds, cmd)
 	}
 
 	return b, tea.Batch(cmds...)
@@ -250,7 +251,7 @@ func (b box) View() string {
 	}
 
 	doc.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(content))
-	return docStyle.Render(doc.String())
+	return zone.Mark("middle", docStyle.Render(doc.String()))
 
 	// b.viewport.Width = b.width - 2
 	// b.viewport.Height = b.height - 4

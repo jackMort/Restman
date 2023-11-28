@@ -6,14 +6,15 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	zone "github.com/lrstanley/bubblezone"
 )
 
 const (
 	USERNAME_IDX = iota
 	PASSWORD_IDX
 	TOKEN_IDX
-  API_KEY_IDX
-  API_VALUE_IDX
+	API_KEY_IDX
+	API_VALUE_IDX
 )
 
 const (
@@ -58,7 +59,7 @@ func New(width int) Model {
 	inputs[PASSWORD_IDX] = textinput.New()
 	inputs[PASSWORD_IDX].Placeholder = "password"
 	inputs[PASSWORD_IDX].Prompt = "󰌆  "
-  
+
 	inputs[TOKEN_IDX] = textinput.New()
 	inputs[TOKEN_IDX].Placeholder = "token"
 	inputs[TOKEN_IDX].Prompt = "󰌆  "
@@ -98,28 +99,41 @@ func (c *Model) prevInput() {
 	}
 }
 
+func (c *Model) nextMethod() {
+  switch c.method {
+  case NONE:
+    c.method = BASIC_AUTH
+    c.focused = USERNAME_IDX
+  case BASIC_AUTH:
+    c.method = BEARER_TOKEN
+    c.focused = TOKEN_IDX
+  case BEARER_TOKEN:
+    c.method = API_KEY
+    c.focused = API_KEY_IDX
+  case API_KEY:
+    c.method = NONE
+  }
+}
+
 // Update handles messages.
 func (c Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd = make([]tea.Cmd, len(c.inputs))
+	switch msg := msg.(type) {
+	case tea.MouseMsg:
+		if msg.Type == tea.MouseLeft {
+			if zone.Get("auth_method").InBounds(msg) {
+        c.nextMethod()
+        return c, nil
+			}
+		}
+	}
 
 	if msg, ok := msg.(tea.KeyMsg); ok {
 		switch msg.Type {
 
 		case tea.KeyCtrlE:
 			// cycle over methods
-			switch c.method {
-			case NONE:
-				c.method = BASIC_AUTH
-        c.focused = USERNAME_IDX
-			case BASIC_AUTH:
-				c.method = BEARER_TOKEN
-        c.focused = TOKEN_IDX
-			case BEARER_TOKEN:
-				c.method = API_KEY
-        c.focused = API_KEY_IDX
-			case API_KEY:
-				c.method = NONE
-			}
+    c.nextMethod()
 
 		case tea.KeyEnter:
 			c.nextInput()
@@ -167,7 +181,7 @@ func (c Model) View() string {
 	header := lipgloss.JoinHorizontal(
 		lipgloss.Center,
 		"Authentication method: ",
-		methodStyle.Render(c.GetMethodName() + " "),
+		zone.Mark("auth_method", methodStyle.Render(c.GetMethodName()+" ")),
 	)
 
 	var inputs string
@@ -183,7 +197,7 @@ func (c Model) View() string {
 		)
 	case NONE:
 		inputs = config.EmptyMessageStyle.Render("No authentication")
-  case BEARER_TOKEN:
+	case BEARER_TOKEN:
 		inputs = lipgloss.JoinVertical(
 			lipgloss.Left,
 			" ",

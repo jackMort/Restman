@@ -15,3 +15,5 @@ type OnResponseMsg struct {
 }
 
 type OnLoadingMsg struct{ Url string }
+
+type SetFocusMsg struct{ Item string }

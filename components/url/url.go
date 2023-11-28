@@ -9,6 +9,7 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	zone "github.com/lrstanley/bubblezone"
 )
 
 var (
@@ -62,7 +63,7 @@ var methodColors = map[string]string{
 }
 
 type url struct {
-  placeholder string
+	placeholder string
 	focused     bool
 	width       int
 	method      string
@@ -77,9 +78,9 @@ func New() url {
 	t.PromptStyle = promptStyle
 	t.Prompt = ""
 	return url{
-		t:      t,
-		method: GET,
-    placeholder: "Enter URL",
+		t:           t,
+		method:      GET,
+		placeholder: "Enter URL",
 	}
 }
 
@@ -88,6 +89,8 @@ func (m url) Init() tea.Cmd {
 }
 
 func (m url) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+
 	switch msg := msg.(type) {
 
 	case app.CollectionSelectedMsg:
@@ -111,7 +114,7 @@ func (m url) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		method := methodStyle.Render(" " + m.method + " ")
 		send := buttonStyle.Render(" SEND ")
 
-		m.t.Width = m.width - lipgloss.Width(method) - lipgloss.Width(send) - 7
+		m.t.Width = m.width - lipgloss.Width(method) - lipgloss.Width(send) - 10
 		m.t.Placeholder = m.placeholder + strings.Repeat(" ", utils.MaxInt(0, m.t.Width-len(m.placeholder)))
 
 	case config.WindowFocusedMsg:
@@ -131,25 +134,36 @@ func (m url) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+s":
 			return m, app.GetInstance().GetAndSaveEndpoint(m.t.Value())
 
-		case "ctrl+n":
-			// cycle over methods
-			switch m.method {
-			case GET:
-				m.method = POST
-			case POST:
-				m.method = PUT
-			case PUT:
-				m.method = DELETE
-			case DELETE:
-				m.method = GET
+		case "ctrl+r":
+			m.CycleOverMethods()
+		}
+
+	case tea.MouseMsg:
+		if msg.Type == tea.MouseLeft {
+			if zone.Get("method").InBounds(msg) {
+				m.CycleOverMethods()
 			}
+			cmd = app.GetInstance().SetFocused("url")
+			return m, cmd
 		}
 	}
 
-	var cmd tea.Cmd
 	newModel, cmd := m.t.Update(msg)
 	m.t = newModel
 	return m, cmd
+}
+
+func (m *url) CycleOverMethods() {
+	switch m.method {
+	case GET:
+		m.method = POST
+	case POST:
+		m.method = PUT
+	case PUT:
+		m.method = DELETE
+	case DELETE:
+		m.method = GET
+	}
 }
 
 func (m url) View() string {
@@ -158,17 +172,21 @@ func (m url) View() string {
 		style = focused
 	}
 	methodStyle.Background(lipgloss.Color(methodColors[m.method]))
-	method := methodStyle.Render(" " + m.method + " ")
+	method := zone.Mark("method", methodStyle.Render(" "+m.method+" "))
 	send := buttonStyle.Render(" SEND ")
+	save := zone.Mark("save", "󰐒 ")
 
-	m.t.Width = m.width - lipgloss.Width(method) - lipgloss.Width(send) - 7 - len(m.t.Prompt)
-	m.t.Placeholder = m.placeholder + strings.Repeat(" ", utils.MaxInt(0, m.t.Width-len(m.placeholder) + 1))
+	m.t.Width = m.width - lipgloss.Width(method) - lipgloss.Width(send) - 9 - len(m.t.Prompt)
+	m.t.Placeholder = m.placeholder + strings.Repeat(" ", utils.MaxInt(0, m.t.Width-len(m.placeholder)+1))
 
 	v := m.t.View()
 
-	return style.Render(
-		lipgloss.JoinHorizontal(
-			lipgloss.Center, method, " ", v, " ", send,
+	return zone.Mark(
+		"url",
+		style.Render(
+			lipgloss.JoinHorizontal(
+				lipgloss.Center, method, " ", v, " ", send, " ", save,
+			),
 		),
 	)
 }

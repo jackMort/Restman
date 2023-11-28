@@ -6,6 +6,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	zone "github.com/lrstanley/bubblezone"
 )
 
 var (
@@ -119,7 +120,7 @@ func (m Collections) View() string {
 	}
 
 	if m.minified {
-		return minified.Render("")
+		return zone.Mark("collections_minified", minified.Render(""))
 	}
 
 	if m.collection != nil {
@@ -134,8 +135,8 @@ func (m Collections) View() string {
 			description,
 			m.smod.View(),
 		)
-		return style.Render(content)
+		return zone.Mark("collections", style.Render(content))
 	}
 
-	return style.Render(m.mod.View())
+	return zone.Mark("collections", style.Render(m.mod.View()))
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	zone "github.com/lrstanley/bubblezone"
 )
 
 var (
@@ -80,7 +81,7 @@ func NewModel() model {
 	// Setup list
 	delegate := newItemDelegate(delegateKeys)
 	groceryList := list.New(items, delegate, 0, 0)
-	groceryList.Title = "  Collections"
+	groceryList.Title = zone.Mark("collections_minify", "  Collections")
 	groceryList.Styles.Title = titleStyle
 	groceryList.Styles.TitleBar = titleBarStyle
 	groceryList.Help.ShowAll = true
