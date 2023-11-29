@@ -2,6 +2,7 @@ package footer
 
 import (
 	"restman/app"
+	"restman/components/config"
 	"strconv"
 	"time"
 
@@ -9,14 +10,26 @@ import (
 	"github.com/charmbracelet/bubbles/stopwatch"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/mistakenelf/teacup/statusbar"
+)
+
+var (
+	container = lipgloss.NewStyle().
+			BorderForeground(config.COLOR_SUBTLE).
+			Background(config.COLOR_SUBTLE).
+			Border(lipgloss.NormalBorder()).
+			BorderBottom(false).
+			BorderTop(false)
+
+	stopwatchStyle = lipgloss.NewStyle().
+			Background(config.COLOR_HIGHLIGHT).
+			Padding(0, 1)
 )
 
 // model represents the properties of the UI.
 type model struct {
-	statusbar  statusbar.Model
 	stopwatch  stopwatch.Model
 	height     int
+	width      int
 	url        string
 	loading    bool
 	spinner    spinner.Model
@@ -25,27 +38,7 @@ type model struct {
 
 // New creates a new instance of the UI.
 func New() model {
-	sb := statusbar.New(
-		statusbar.ColorConfig{
-			Foreground: lipgloss.AdaptiveColor{Dark: "#ffffff", Light: "#ffffff"},
-			Background: lipgloss.AdaptiveColor{Light: "#F25D94", Dark: "#F25D94"},
-		},
-		statusbar.ColorConfig{
-			Foreground: lipgloss.AdaptiveColor{Light: "#ffffff", Dark: "#ffffff"},
-			Background: lipgloss.AdaptiveColor{Light: "#3c3836", Dark: "#3c3836"},
-		},
-		statusbar.ColorConfig{
-			Foreground: lipgloss.AdaptiveColor{Light: "#ffffff", Dark: "#ffffff"},
-			Background: lipgloss.AdaptiveColor{Light: "#3c3836", Dark: "#3c3836"},
-		},
-		statusbar.ColorConfig{
-			Foreground: lipgloss.AdaptiveColor{Light: "#ffffff", Dark: "#ffffff"},
-			Background: lipgloss.AdaptiveColor{Light: "#6124DF", Dark: "#6124DF"},
-		},
-	)
-
 	return model{
-		statusbar: sb,
 		stopwatch: stopwatch.NewWithInterval(time.Millisecond),
 	}
 }
@@ -63,7 +56,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.height = msg.Height
-		m.statusbar.SetSize(msg.Width)
+		m.width = msg.Width - 2
 
 	case app.OnLoadingMsg:
 		m.url = msg.Url
@@ -83,7 +76,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	var cmd tea.Cmd
+	m.stopwatch, cmd = m.stopwatch.Update(msg)
+	return m, cmd
+}
 
+// View returns a string representation of the UI.
+func (m model) View() string {
 	var status string
 	var color string
 	if m.loading {
@@ -103,37 +101,27 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	} else {
 		status = " READY TO GO"
 		color = "#666666"
-
 	}
 
-	m.statusbar.SetColors(
-		statusbar.ColorConfig{
-			Foreground: lipgloss.AdaptiveColor{Dark: "#ffffff", Light: "#ffffff"},
-			Background: lipgloss.AdaptiveColor{Light: color, Dark: color},
-		},
-		statusbar.ColorConfig{
-			Foreground: lipgloss.AdaptiveColor{Light: "#ffffff", Dark: "#ffffff"},
-			Background: lipgloss.AdaptiveColor{Light: "#3c3836", Dark: "#3c3836"},
-		},
-		statusbar.ColorConfig{
-			Foreground: lipgloss.AdaptiveColor{Light: "#ffffff", Dark: "#ffffff"},
-			Background: lipgloss.AdaptiveColor{Light: "#3c3836", Dark: "#3c3836"},
-		},
-		statusbar.ColorConfig{
-			Foreground: lipgloss.AdaptiveColor{Light: "#ffffff", Dark: "#ffffff"},
-			Background: lipgloss.AdaptiveColor{Light: "#6124DF", Dark: "#6124DF"},
-		},
+	statusToRender := lipgloss.NewStyle().
+		Background(lipgloss.Color(color)).
+		Foreground(config.COLOR_SUBTLE).
+		Padding(0, 1).
+		Render(status)
+
+	statusWidth := lipgloss.Width(statusToRender)
+
+	return container.Width(m.width).Render(
+		lipgloss.JoinHorizontal(
+			lipgloss.Left,
+			statusToRender,
+			lipgloss.PlaceHorizontal(
+				m.width-statusWidth,
+				lipgloss.Right,
+				stopwatchStyle.Render(" "+m.stopwatch.View()),
+				lipgloss.WithWhitespaceBackground(config.COLOR_SUBTLE),
+			),
+		),
 	)
 
-	m.statusbar.SetContent(status, m.url, "", " "+m.stopwatch.View())
-	m.stopwatch, cmd = m.stopwatch.Update(msg)
-	return m, cmd
-}
-
-// View returns a string representation of the UI.
-func (m model) View() string {
-	return lipgloss.JoinHorizontal(
-		lipgloss.Top,
-		m.statusbar.View(),
-	)
 }
