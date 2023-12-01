@@ -244,6 +244,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.popup = nil
 				return m, nil
 
+			} else if zone.Get("add_to_collection_save").InBounds(msg) {
+        coll := m.popup.(collections.AddToCollection)
+        cmd := coll.Save()
+
+				m.popup = nil
+				return m, cmd
+
 			} else if zone.Get("collections_minified").InBounds(msg) {
 				m.tui.ModelMap["collections"], cmd = m.tui.ModelMap["collections"].(collections.Collections).SetMinified(false)
 				m.tui.UpdateSize(tea.WindowSizeMsg{Width: m.tui.LayoutTree.GetWidth(), Height: m.tui.LayoutTree.GetHeight()})
@@ -251,26 +258,26 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			} else if zone.Get("tab_Results").InBounds(msg) {
 				m.SetFocused("middle")
-        middle := m.getMiddlePane()
-        middle.SetActiveTab(0)
+				middle := m.getMiddlePane()
+				middle.SetActiveTab(0)
 				m.tui.ModelMap["middle"] = middle
 
 			} else if zone.Get("tab_Params").InBounds(msg) {
 				m.SetFocused("middle")
-        middle := m.getMiddlePane()
-        middle.SetActiveTab(1)
+				middle := m.getMiddlePane()
+				middle.SetActiveTab(1)
 				m.tui.ModelMap["middle"] = middle
 
 			} else if zone.Get("tab_Headers").InBounds(msg) {
 				m.SetFocused("middle")
-        middle := m.getMiddlePane()
-        middle.SetActiveTab(2)
+				middle := m.getMiddlePane()
+				middle.SetActiveTab(2)
 				m.tui.ModelMap["middle"] = middle
 
 			} else if zone.Get("tab_Auth").InBounds(msg) {
 				m.SetFocused("middle")
-        middle := m.getMiddlePane()
-        middle.SetActiveTab(3)
+				middle := m.getMiddlePane()
+				middle.SetActiveTab(3)
 				m.tui.ModelMap["middle"] = middle
 
 			} else if zone.Get("collections_minify").InBounds(msg) {

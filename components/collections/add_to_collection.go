@@ -106,6 +106,10 @@ func (c AddToCollection) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return c, tea.Batch(cmds...)
 }
 
+func (c AddToCollection) Save() tea.Cmd {
+	return app.GetInstance().GetAndSaveEndpoint(c.inputs[URL_IDX].Value())
+}
+
 // View renders the popup.
 func (c AddToCollection) View() string {
 	okButtonStyle := config.ButtonStyle

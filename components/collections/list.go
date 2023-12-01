@@ -15,8 +15,6 @@ var (
 	appStyle = lipgloss.NewStyle()
 
 	titleStyle = lipgloss.NewStyle().
-			BorderStyle(lipgloss.NormalBorder()).
-			BorderBottom(true).
 			BorderForeground(config.COLOR_SUBTLE)
 
 	titleBarStyle = lipgloss.NewStyle().PaddingBottom(1)
@@ -74,9 +72,6 @@ func NewModel() model {
 
 	// Make initial list of items
 	items := []list.Item{}
-	// for _, collection := range app.Application.Collections {
-	// 	items = append(items, collection)
-	// }
 
 	// Setup list
 	delegate := newItemDelegate(delegateKeys)

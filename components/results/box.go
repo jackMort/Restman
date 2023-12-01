@@ -153,8 +153,8 @@ func (b Middle) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (b *Middle) SetActiveTab(tab int) {
-	b.activeTab = tab
-	b.content = b.GetContent()
+  b.activeTab = tab
+  b.content = b.GetContent()
 }
 
 func (b Middle) View() string {
