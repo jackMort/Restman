@@ -7,6 +7,7 @@ import (
 	"restman/components/collections"
 	"restman/components/config"
 	"restman/components/footer"
+	"restman/components/help_popup"
 	"restman/components/popup"
 	"restman/components/results"
 	"restman/components/url"
@@ -187,6 +188,21 @@ func (m *Model) SetFocused(newFocused string) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+func (m Model) getCollectionsPane() *collections.Collections {
+	collections := m.tui.ModelMap["collections"].(collections.Collections)
+	return &collections
+}
+
+func (m Model) getUrlPane() *url.Url {
+	url := m.tui.ModelMap["url"].(url.Url)
+	return &url
+}
+
+func (m Model) getMiddlePane() *results.Middle {
+	middle := m.tui.ModelMap["middle"].(results.Middle)
+	return &middle
+}
+
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
@@ -200,7 +216,73 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 
-	case collections.CreateResultMsg:
+	case tea.MouseMsg:
+		if msg.Type == tea.MouseLeft {
+			if zone.Get("method").InBounds(msg) {
+				m.SetFocused("url")
+				url := m.getUrlPane()
+				url.CycleOverMethods()
+				m.tui.ModelMap["url"] = url
+
+			} else if zone.Get("input").InBounds(msg) {
+				m.SetFocused("url")
+
+			} else if zone.Get("send").InBounds(msg) {
+				m.SetFocused("url")
+
+			} else if zone.Get("save").InBounds(msg) {
+				m.SetFocused("url")
+				url := m.getUrlPane()
+
+				coll := collections.NewAddToCollection(m.View(), 40, m.tui.LayoutTree.GetWidth())
+				coll.SetUrl(url.Value())
+
+				m.popup = coll
+				return m, m.popup.Init()
+
+			} else if zone.Get("add_to_collection_cancel").InBounds(msg) {
+				m.popup = nil
+				return m, nil
+
+			} else if zone.Get("collections_minified").InBounds(msg) {
+				m.tui.ModelMap["collections"], cmd = m.tui.ModelMap["collections"].(collections.Collections).SetMinified(false)
+				m.tui.UpdateSize(tea.WindowSizeMsg{Width: m.tui.LayoutTree.GetWidth(), Height: m.tui.LayoutTree.GetHeight()})
+				return m.SetFocused("collections")
+
+			} else if zone.Get("tab_Results").InBounds(msg) {
+				m.SetFocused("middle")
+        middle := m.getMiddlePane()
+        middle.SetActiveTab(0)
+				m.tui.ModelMap["middle"] = middle
+
+			} else if zone.Get("tab_Params").InBounds(msg) {
+				m.SetFocused("middle")
+        middle := m.getMiddlePane()
+        middle.SetActiveTab(1)
+				m.tui.ModelMap["middle"] = middle
+
+			} else if zone.Get("tab_Headers").InBounds(msg) {
+				m.SetFocused("middle")
+        middle := m.getMiddlePane()
+        middle.SetActiveTab(2)
+				m.tui.ModelMap["middle"] = middle
+
+			} else if zone.Get("tab_Auth").InBounds(msg) {
+				m.SetFocused("middle")
+        middle := m.getMiddlePane()
+        middle.SetActiveTab(3)
+				m.tui.ModelMap["middle"] = middle
+
+			} else if zone.Get("collections_minify").InBounds(msg) {
+				m.tui.ModelMap["collections"], cmd = m.tui.ModelMap["collections"].(collections.Collections).SetMinified(true)
+				m.tui.UpdateSize(tea.WindowSizeMsg{Width: m.tui.LayoutTree.GetWidth(), Height: m.tui.LayoutTree.GetHeight()})
+				return m.SetFocused("url")
+			} else if zone.Get("collections").InBounds(msg) {
+				return m.SetFocused("collections")
+			}
+		}
+
+	case collections.CreateResultMsg, collections.AddToCollectionResultMsg:
 		m.popup = nil
 		return m, nil
 	}
@@ -213,25 +295,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// ----------------------------
 
 	switch msg := msg.(type) {
-	case tea.MouseMsg:
-		if msg.Type == tea.MouseLeft {
-			if zone.Get("url").InBounds(msg) {
-				m.SetFocused("url")
-			} else if zone.Get("collections_minified").InBounds(msg) {
-				m.tui.ModelMap["collections"], cmd = m.tui.ModelMap["collections"].(collections.Collections).SetMinified(false)
-				m.tui.UpdateSize(tea.WindowSizeMsg{Width: m.tui.LayoutTree.GetWidth(), Height: m.tui.LayoutTree.GetHeight()})
-				return m.SetFocused("collections")
-			} else if zone.Get("middle").InBounds(msg) {
-				m.SetFocused("middle")
-			} else if zone.Get("collections_minify").InBounds(msg) {
-				m.tui.ModelMap["collections"], cmd = m.tui.ModelMap["collections"].(collections.Collections).SetMinified(true)
-				m.tui.UpdateSize(tea.WindowSizeMsg{Width: m.tui.LayoutTree.GetWidth(), Height: m.tui.LayoutTree.GetHeight()})
-				return m.SetFocused("url")
-			} else if zone.Get("collections").InBounds(msg) {
-				return m.SetFocused("collections")
-			}
-		}
-
 	case app.SetFocusMsg:
 		fmt.Println("SetFocusMsg: ", msg.Item)
 		m.SetFocused(msg.Item)
@@ -246,7 +309,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, m.popup.Init()
 
 			case "ctrl+n":
-				m.popup = collections.NewCreate(m.View(), utils.MinInt(m.tui.LayoutTree.GetWidth()-30, 100))
+				m.popup = collections.NewCreate(m.View(), utils.MinInt(70, 100))
+				return m, m.popup.Init()
+
+			case "shift+h":
+				m.popup = help.NewHelp(m.View(), 50)
+				return m, m.popup.Init()
+
+			case "ctrl+s":
+				m.popup = collections.NewAddToCollection(m.View(), 40, m.tui.LayoutTree.GetWidth())
 				return m, m.popup.Init()
 
 			case "tab":

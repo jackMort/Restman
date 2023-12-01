@@ -62,7 +62,7 @@ var methodColors = map[string]string{
 	DELETE: "#F25C54",
 }
 
-type url struct {
+type Url struct {
 	placeholder string
 	focused     bool
 	width       int
@@ -73,33 +73,25 @@ type url struct {
 	collection  *app.Collection
 }
 
-func New() url {
+func New() Url {
 	t := textinput.New()
 	t.PromptStyle = promptStyle
 	t.Prompt = ""
-	return url{
+	return Url{
 		t:           t,
 		method:      GET,
 		placeholder: "Enter URL",
 	}
 }
 
-func (m url) Init() tea.Cmd {
+func (m Url) Init() tea.Cmd {
 	return nil
 }
 
-func (m url) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Url) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
-
-	case app.CollectionSelectedMsg:
-		m.collection = msg.Collection
-		if m.collection != nil {
-			m.t.Prompt = m.collection.BaseUrl
-		} else {
-			m.call = nil
-		}
 
 	case app.CallSelectedMsg:
 		m.call = msg.Call
@@ -131,20 +123,8 @@ func (m url) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			url := m.t.Prompt + m.t.Value()
 			return m, app.GetInstance().GetResponse(url)
 
-		case "ctrl+s":
-			return m, app.GetInstance().GetAndSaveEndpoint(m.t.Value())
-
 		case "ctrl+r":
 			m.CycleOverMethods()
-		}
-
-	case tea.MouseMsg:
-		if msg.Type == tea.MouseLeft {
-			if zone.Get("method").InBounds(msg) {
-				m.CycleOverMethods()
-			}
-			cmd = app.GetInstance().SetFocused("url")
-			return m, cmd
 		}
 	}
 
@@ -153,7 +133,15 @@ func (m url) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m *url) CycleOverMethods() {
+func (m *Url) SaveToCollection() (tea.Model, tea.Cmd) {
+	return m, app.GetInstance().GetAndSaveEndpoint(m.t.Value())
+}
+
+func (m *Url) Value() string {
+	return m.t.Value()
+}
+
+func (m *Url) CycleOverMethods() {
 	switch m.method {
 	case GET:
 		m.method = POST
@@ -166,27 +154,24 @@ func (m *url) CycleOverMethods() {
 	}
 }
 
-func (m url) View() string {
+func (m Url) View() string {
 	style := normal
 	if m.focused {
 		style = focused
 	}
 	methodStyle.Background(lipgloss.Color(methodColors[m.method]))
 	method := zone.Mark("method", methodStyle.Render(" "+m.method+" "))
-	send := buttonStyle.Render(" SEND ")
+	send := zone.Mark("send", buttonStyle.Render(" SEND "))
 	save := zone.Mark("save", "󰐒 ")
 
-	m.t.Width = m.width - lipgloss.Width(method) - lipgloss.Width(send) - 9 - len(m.t.Prompt)
+	m.t.Width = m.width - lipgloss.Width(method) - lipgloss.Width(send) - 9
 	m.t.Placeholder = m.placeholder + strings.Repeat(" ", utils.MaxInt(0, m.t.Width-len(m.placeholder)+1))
 
-	v := m.t.View()
+	v := zone.Mark("input", m.t.View())
 
-	return zone.Mark(
-		"url",
-		style.Render(
-			lipgloss.JoinHorizontal(
-				lipgloss.Center, method, " ", v, " ", send, " ", save,
-			),
+	return style.Render(
+		lipgloss.JoinHorizontal(
+			lipgloss.Center, method, " ", v, " ", send, " ", save,
 		),
 	)
 }

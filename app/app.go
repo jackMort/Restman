@@ -23,8 +23,13 @@ type Collection struct {
 	Auth    *Auth
 }
 
-func (i Collection) Title() string       { return i.Name }
-func (i Collection) Description() string { return i.BaseUrl }
+func (i Collection) Title() string { return i.Name }
+func (i Collection) Description() string {
+	if i.BaseUrl != "" {
+		return i.BaseUrl
+	}
+	return " "
+}
 func (i Collection) FilterValue() string { return i.Name }
 
 type Call struct {
@@ -126,18 +131,15 @@ func (a *App) GetResponse(url string) tea.Cmd {
 func (a *App) CreateCollection(title string, url string) tea.Cmd {
 	collection := Collection{Name: title, BaseUrl: url}
 
-	return tea.Batch(
-		func() tea.Msg {
-			configDir, _ := os.UserConfigDir()
-			a.Collections = append(a.Collections, collection)
+	return func() tea.Msg {
+		configDir, _ := os.UserConfigDir()
+		a.Collections = append(a.Collections, collection)
 
-			file, _ := json.MarshalIndent(a.Collections, "", " ")
-			_ = os.WriteFile(filepath.Join(configDir, "restman", "collections.json"), file, 0644)
+		file, _ := json.MarshalIndent(a.Collections, "", " ")
+		_ = os.WriteFile(filepath.Join(configDir, "restman", "collections.json"), file, 0644)
 
-			return FetchCollectionsSuccessMsg{Collections: a.Collections}
-		},
-		a.SetSelectedCollection(&collection),
-	)
+		return FetchCollectionsSuccessMsg{Collections: a.Collections}
+	}
 }
 
 // TODO refactor

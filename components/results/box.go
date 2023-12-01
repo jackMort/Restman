@@ -58,7 +58,7 @@ var (
 			Render
 )
 
-type box struct {
+type Middle struct {
 	title     string
 	focused   bool
 	body      string
@@ -71,28 +71,28 @@ type box struct {
 	content   tea.Model
 }
 
-func New() box {
-	return box{
+func New() Middle {
+	return Middle{
 		title: "Results",
 		Tabs:  []string{"Results", "Params", "Headers", "Auth"},
 	}
 }
 
 // satisfy the tea.Model interface
-func (b box) Init() tea.Cmd {
+func (b Middle) Init() tea.Cmd {
 	b.viewport = viewport.New(10, 10)
 	b.activeTab = 1
 	return nil
 }
 
-func (b box) GetContent() tea.Model {
+func (b Middle) GetContent() tea.Model {
 	if b.activeTab == 3 {
 		return auth.New(b.viewport.Width)
 	}
 	return nil
 }
 
-func (b box) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (b Middle) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	case tea.WindowSizeMsg:
@@ -152,7 +152,12 @@ func (b box) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return b, tea.Batch(cmds...)
 }
 
-func (b box) View() string {
+func (b *Middle) SetActiveTab(tab int) {
+	b.activeTab = tab
+	b.content = b.GetContent()
+}
+
+func (b Middle) View() string {
 	doc := strings.Builder{}
 
 	var renderedTabs []string
@@ -185,7 +190,7 @@ func (b box) View() string {
 		}
 
 		style = style.Border(border)
-		renderedTabs = append(renderedTabs, style.Render(t))
+		renderedTabs = append(renderedTabs, zone.Mark("tab_"+t, style.Render(t)))
 	}
 	renderedTabs = append(renderedTabs, tabGap.Render(strings.Repeat(" ", b.width-46)))
 
@@ -251,18 +256,5 @@ func (b box) View() string {
 	}
 
 	doc.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(content))
-	return zone.Mark("middle", docStyle.Render(doc.String()))
-
-	// b.viewport.Width = b.width - 2
-	// b.viewport.Height = b.height - 4
-
-	// content := lipgloss.JoinVertical(lipgloss.Left,
-	// 	buttons,
-	// 	b.viewport.View(),
-	// )
-
-	// if b.focused {
-	// 	return testStyleFocused.Render(content)
-	// }
-	// return testStyle.Render(content)
+	return docStyle.Render(doc.String())
 }

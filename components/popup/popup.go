@@ -3,6 +3,7 @@ package popup
 import (
 	"strings"
 
+	zone "github.com/lrstanley/bubblezone"
 	"github.com/muesli/ansi"
 )
 
@@ -66,6 +67,52 @@ func NewOverlay(bgRaw string, width, height int) Overlay {
 	}
 }
 
+func NewOverlayOnPosition(bgRaw string, width, height int, startRow int, startCol int) Overlay {
+	bg := strings.Split(bgRaw, "\n")
+	bgWidth := ansi.PrintableRuneWidth(bg[0])
+	bgHeight := len(bg)
+
+	if height > bgHeight {
+		height = bgHeight
+	}
+	if width > bgWidth {
+		width = bgWidth
+	}
+
+	rowPrefix := make([]string, height)
+	rowSuffix := make([]string, height)
+
+	for i, text := range bg[startRow : startRow+height] {
+		popupStart := findPrintIndex(text, startCol)
+		popupEnd := findPrintIndex(text, startCol+width)
+
+		if popupStart != -1 {
+			rowPrefix[i] = text[:popupStart]
+		} else {
+			rowPrintable := ansi.PrintableRuneWidth(text)
+			rowPrefix[i] = text + strings.Repeat(" ", startCol-rowPrintable)
+		}
+
+		if popupEnd != -1 {
+			rowSuffix[i] = text[popupEnd:]
+		} else {
+			rowSuffix[i] = ""
+		}
+	}
+
+	prefix := strings.Join(bg[:startRow], "\n")
+	suffix := strings.Join(bg[startRow+height:], "\n")
+
+	return Overlay{
+		rowPrefix: rowPrefix,
+		rowSuffix: rowSuffix,
+		width:     width,
+		height:    height,
+		textAbove: prefix,
+		textBelow: suffix,
+	}
+}
+
 // WrapView overlays the given text on top of the background.
 // TODO: Maybe handle the box here. It's a bit weird to have to do it in the view.
 func (p Overlay) WrapView(view string) string {
@@ -82,7 +129,7 @@ func (p Overlay) WrapView(view string) string {
 	}
 
 	b.WriteString(p.textBelow)
-	return b.String()
+	return zone.Scan(b.String())
 }
 
 // Width returns the width of the popup window.
