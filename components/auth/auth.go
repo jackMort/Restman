@@ -55,6 +55,7 @@ func New(width int) Model {
 	inputs[USERNAME_IDX].Placeholder = "username"
 	inputs[USERNAME_IDX].Focus()
 	inputs[USERNAME_IDX].Prompt = "  "
+	inputs[USERNAME_IDX].Width = 40
 
 	inputs[PASSWORD_IDX] = textinput.New()
 	inputs[PASSWORD_IDX].Placeholder = "password"

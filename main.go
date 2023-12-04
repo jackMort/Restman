@@ -203,6 +203,12 @@ func (m Model) getMiddlePane() *results.Middle {
 	return &middle
 }
 
+func (m Model) AddToCollection () tea.Cmd {
+  url := m.getUrlPane()
+  coll := m.popup.(collections.AddToCollection)
+  return app.GetInstance().AddToCollection(coll.CollectionName(), url.Value(), url.Method())
+}
+
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
@@ -245,8 +251,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 
 			} else if zone.Get("add_to_collection_save").InBounds(msg) {
-        coll := m.popup.(collections.AddToCollection)
-        cmd := coll.Save()
+				cmd := m.AddToCollection()
 
 				m.popup = nil
 				return m, cmd
@@ -324,7 +329,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, m.popup.Init()
 
 			case "ctrl+s":
-				m.popup = collections.NewAddToCollection(m.View(), 40, m.tui.LayoutTree.GetWidth())
+				url := m.getUrlPane()
+
+				coll := collections.NewAddToCollection(m.View(), 40, m.tui.LayoutTree.GetWidth())
+				coll.SetUrl(url.Value())
+
+				m.popup = coll
 				return m, m.popup.Init()
 
 			case "tab":

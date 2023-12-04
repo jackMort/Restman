@@ -84,6 +84,14 @@ func New() Url {
 	}
 }
 
+func (m Url) Url() string {
+	return m.t.Value()
+}
+
+func (m Url) Method() string {
+	return m.method
+}
+
 func (m Url) Init() tea.Cmd {
 	return nil
 }
@@ -95,7 +103,7 @@ func (m Url) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case app.CallSelectedMsg:
 		m.call = msg.Call
-		m.defaultText = m.call.Endpoint
+		m.defaultText = m.call.Url
 		m.t.SetValue(m.defaultText)
 
 	case tea.WindowSizeMsg:
@@ -131,10 +139,6 @@ func (m Url) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	newModel, cmd := m.t.Update(msg)
 	m.t = newModel
 	return m, cmd
-}
-
-func (m *Url) SaveToCollection() (tea.Model, tea.Cmd) {
-	return m, app.GetInstance().GetAndSaveEndpoint(m.t.Value())
 }
 
 func (m *Url) Value() string {

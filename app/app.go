@@ -33,13 +33,13 @@ func (i Collection) Description() string {
 func (i Collection) FilterValue() string { return i.Name }
 
 type Call struct {
-	Endpoint string
-	Method   string
+	Url    string
+	Method string
 }
 
-func (i Call) Title() string       { return i.Endpoint }
+func (i Call) Title() string       { return i.Url }
 func (i Call) Description() string { return i.Method }
-func (i Call) FilterValue() string { return i.Endpoint }
+func (i Call) FilterValue() string { return i.Url }
 
 type App struct {
 	SelectedCollection *Collection
@@ -155,36 +155,45 @@ func (a *App) SaveCollections() tea.Cmd {
 	}
 }
 
-func (a *App) GetAndSaveEndpoint(endpoint string) tea.Cmd {
-	// TODO: method
-	call := Call{Endpoint: endpoint, Method: "GET"}
-	for i, c := range a.Collections {
-		if c.Name == a.SelectedCollection.Name {
-			a.Collections[i].Calls = append(a.Collections[i].Calls, call)
-			a.SelectedCollection = &a.Collections[i]
+func (a *App) GetOrCreateCollection(name string) *Collection {
+	for _, c := range a.Collections {
+		if c.Name == name {
+			return &c
 		}
 	}
-
-	return tea.Batch(
-		a.GetResponse(a.SelectedCollection.BaseUrl+endpoint),
-		a.SaveCollections(),
-		a.SetSelectedCollection(a.SelectedCollection),
-	)
+	collection := Collection{Name: name}
+	a.Collections = append(a.Collections, collection)
+	return &collection
 }
 
-func (a *App) SaveEndpoint(endpoint string) tea.Cmd {
-	// TODO: method
-	call := Call{Endpoint: endpoint, Method: "GET"}
-	for i, c := range a.Collections {
-		if c.Name == a.SelectedCollection.Name {
-			a.Collections[i].Calls = append(a.Collections[i].Calls, call)
-			a.SelectedCollection = &a.Collections[i]
+func (a *App) AddToCollection(
+	collectionName string,
+	url string,
+	method string,
+) tea.Cmd {
+	call := Call{Url: url, Method: method}
+	collection := a.GetOrCreateCollection(collectionName)
+
+	// if call already exists in collection update if not append
+	var exists bool
+	for i, c := range collection.Calls {
+		if c.Url == call.Url && c.Method == call.Method {
+			exists = true
+			collection.Calls[i] = call
 		}
 	}
+	if !exists {
+		collection.Calls = append(collection.Calls, call)
+	}
+
+  for i, c := range a.Collections {
+    if c.Name == collection.Name {
+      a.Collections[i] = *collection
+    }
+  }
 
 	return tea.Batch(
 		a.SaveCollections(),
-		a.SetSelectedCollection(a.SelectedCollection),
 	)
 }
 

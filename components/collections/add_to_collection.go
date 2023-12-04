@@ -5,6 +5,7 @@ import (
 	"restman/components/config"
 	"restman/components/popup"
 
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -12,7 +13,7 @@ import (
 )
 
 const (
-	NAME_IDX = iota
+	COLLECTION_IDX = iota
 	URL_IDX
 )
 
@@ -26,25 +27,47 @@ type AddToCollection struct {
 	overlay popup.Overlay
 	inputs  []textinput.Model
 	focused int
+	save    bool
 	err     error
 }
 
 func NewAddToCollection(bgRaw string, width int, vWidth int) AddToCollection {
 	var inputs []textinput.Model = make([]textinput.Model, 2)
-	inputs[NAME_IDX] = textinput.New()
-	inputs[NAME_IDX].Placeholder = "Request name"
-	inputs[NAME_IDX].Focus()
-	inputs[NAME_IDX].Prompt = ""
+
+	inputs[COLLECTION_IDX] = textinput.New()
+	inputs[COLLECTION_IDX].Placeholder = "Collection"
+	inputs[COLLECTION_IDX].Prompt = ""
+	inputs[COLLECTION_IDX].ShowSuggestions = true
+	inputs[COLLECTION_IDX].KeyMap.AcceptSuggestion = key.NewBinding(
+		key.WithKeys("enter"),
+	)
 
 	inputs[URL_IDX] = textinput.New()
 	inputs[URL_IDX].Placeholder = "https://sampleapi.com/api/v1"
 	inputs[URL_IDX].Prompt = ""
+
+	if app.GetInstance().SelectedCollection != nil {
+		inputs[COLLECTION_IDX].SetValue(app.GetInstance().SelectedCollection.Name)
+		inputs[URL_IDX].Focus()
+	} else {
+		inputs[COLLECTION_IDX].Focus()
+	}
+	collections := app.GetInstance().Collections
+	suggestions := make([]string, len(collections))
+	for i, c := range collections {
+		suggestions[i] = c.Name
+	}
+	inputs[COLLECTION_IDX].SetSuggestions(suggestions)
 
 	return AddToCollection{
 		overlay: popup.NewOverlayOnPosition(bgRaw, width, 13, 3, vWidth-width-4),
 		inputs:  inputs,
 		focused: 0,
 	}
+}
+
+func (c AddToCollection) CollectionName() string {
+	return c.inputs[COLLECTION_IDX].Value()
 }
 
 func (c AddToCollection) SetUrl(url string) {
@@ -74,21 +97,21 @@ func (c *AddToCollection) prevInput() {
 func (c AddToCollection) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd = make([]tea.Cmd, len(c.inputs))
 
-	if msg, ok := msg.(tea.KeyMsg); ok {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyEnter:
-			return c, tea.Batch(
-				app.GetInstance().CreateCollection(
-					c.inputs[NAME_IDX].Value(),
-					c.inputs[URL_IDX].Value(),
-				),
-				c.makeChoice(),
-			)
+			if c.focused == 3 {
+				return c, c.makeChoice()
+			} else if c.focused == 2 {
+				c.save = true
+				return c, c.makeChoice()
+			} 
 		case tea.KeyCtrlC, tea.KeyEsc:
 			return c, c.makeChoice()
-		case tea.KeyShiftTab, tea.KeyCtrlP:
+		case tea.KeyShiftTab, tea.KeyCtrlK:
 			c.prevInput()
-		case tea.KeyTab, tea.KeyCtrlN:
+		case tea.KeyTab, tea.KeyCtrlJ:
 			c.nextInput()
 		}
 		for i := range c.inputs {
@@ -104,10 +127,6 @@ func (c AddToCollection) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	return c, tea.Batch(cmds...)
-}
-
-func (c AddToCollection) Save() tea.Cmd {
-	return app.GetInstance().GetAndSaveEndpoint(c.inputs[URL_IDX].Value())
 }
 
 // View renders the popup.
@@ -133,9 +152,8 @@ func (c AddToCollection) View() string {
 
 	inputs := lipgloss.JoinVertical(
 		lipgloss.Left,
-
-		inputStyle.Width(30).Render("Name:"),
-		c.inputs[NAME_IDX].View(),
+		inputStyle.Width(30).Render("Collection:"),
+		c.inputs[COLLECTION_IDX].View(),
 		" ",
 
 		inputStyle.Width(30).Render("URL:"),
@@ -152,5 +170,5 @@ func (c AddToCollection) View() string {
 }
 
 func (c AddToCollection) makeChoice() tea.Cmd {
-	return func() tea.Msg { return AddToCollectionResultMsg{false} }
+	return func() tea.Msg { return AddToCollectionResultMsg{c.save} }
 }
