@@ -10,6 +10,7 @@ import (
 	"restman/components/help_popup"
 	"restman/components/popup"
 	"restman/components/results"
+	"restman/components/tabs"
 	"restman/components/url"
 	"restman/utils"
 
@@ -55,16 +56,19 @@ func main() {
 	middle := results.New()
 	footerBox := footer.New()
 	colBox := collections.New()
+  tabs := tabs.New()
 
 	centerNode := boxer.CreateNoBorderNode()
 	centerNode.VerticalStacked = true
 	centerNode.SizeFunc = func(node boxer.Node, widthOrHeight int) []int {
 		return []int{
+      2,
 			3,
-			widthOrHeight - 3,
+			widthOrHeight - 5,
 		}
 	}
 	centerNode.Children = []boxer.Node{
+		stripErr(m.tui.CreateLeaf("tabs", tabs)),
 		stripErr(m.tui.CreateLeaf("url", url)),
 		stripErr(m.tui.CreateLeaf("middle", middle)),
 	}

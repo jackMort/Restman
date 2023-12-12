@@ -15,6 +15,7 @@ var (
 	COLOR_SPECIAL    = lipgloss.AdaptiveColor{Light: "#43BF6D", Dark: "#73F59F"}
 	COLOR_FOREGROUND = lipgloss.AdaptiveColor{Light: "#666666", Dark: "#ffffff"}
 	COLOR_GRAY       = lipgloss.AdaptiveColor{Light: "#666666", Dark: "#666666"}
+	COLOR_WHITE      = lipgloss.AdaptiveColor{Light: "#ffffff", Dark: "#ffffff"}
 )
 
 var BoxHeader = lipgloss.NewStyle().
