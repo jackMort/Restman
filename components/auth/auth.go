@@ -18,6 +18,7 @@ const (
 )
 
 const (
+	INHERIT      = "inherit"
 	NONE         = "none"
 	BASIC_AUTH   = "basic_auth"
 	BEARER_TOKEN = "bearer_token"
@@ -77,7 +78,7 @@ func New(width int) Model {
 	return Model{
 		inputs:  inputs,
 		focused: 0,
-		method:  NONE,
+		method:  INHERIT,
 	}
 }
 
@@ -101,19 +102,21 @@ func (c *Model) prevInput() {
 }
 
 func (c *Model) nextMethod() {
-  switch c.method {
-  case NONE:
-    c.method = BASIC_AUTH
-    c.focused = USERNAME_IDX
-  case BASIC_AUTH:
-    c.method = BEARER_TOKEN
-    c.focused = TOKEN_IDX
-  case BEARER_TOKEN:
-    c.method = API_KEY
-    c.focused = API_KEY_IDX
-  case API_KEY:
-    c.method = NONE
-  }
+	switch c.method {
+	case INHERIT:
+		c.method = NONE
+	case NONE:
+		c.method = BASIC_AUTH
+		c.focused = USERNAME_IDX
+	case BASIC_AUTH:
+		c.method = BEARER_TOKEN
+		c.focused = TOKEN_IDX
+	case BEARER_TOKEN:
+		c.method = API_KEY
+		c.focused = API_KEY_IDX
+	case API_KEY:
+		c.method = INHERIT
+	}
 }
 
 // Update handles messages.
@@ -123,8 +126,8 @@ func (c Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.MouseMsg:
 		if msg.Type == tea.MouseLeft {
 			if zone.Get("auth_method").InBounds(msg) {
-        c.nextMethod()
-        return c, nil
+				c.nextMethod()
+				return c, nil
 			}
 		}
 	}
@@ -134,7 +137,7 @@ func (c Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case tea.KeyCtrlE:
 			// cycle over methods
-    c.nextMethod()
+			c.nextMethod()
 
 		case tea.KeyEnter:
 			c.nextInput()
@@ -167,6 +170,8 @@ func (c Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (c Model) GetMethodName() string {
 	switch c.method {
+	case INHERIT:
+		return "Inherit"
 	case BASIC_AUTH:
 		return "Basic Auth"
 	case BEARER_TOKEN:
@@ -187,6 +192,8 @@ func (c Model) View() string {
 
 	var inputs string
 	switch c.method {
+	case INHERIT:
+		inputs = config.EmptyMessageStyle.Render("Inherited from collection")
 	case BASIC_AUTH:
 		inputs = lipgloss.JoinVertical(
 			lipgloss.Left,
