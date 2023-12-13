@@ -6,21 +6,27 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"restman/components/config"
 	"restman/utils"
+	"strings"
+
+	"github.com/google/uuid"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 type Auth struct {
-	Username string
-	Password string
+	Type     string `json:"type"`
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 type Collection struct {
-	Name    string
-	Calls   []Call
-	BaseUrl string
-	Auth    *Auth
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	Calls   []Call `json:"calls"`
+	BaseUrl string `json:"base_url"`
+	Auth    *Auth  `json:"auth"`
 }
 
 func (i Collection) Title() string { return i.Name }
@@ -33,12 +39,25 @@ func (i Collection) Description() string {
 func (i Collection) FilterValue() string { return i.Name }
 
 type Call struct {
-	Url    string
-	Method string
+	ID     string `json:"id"`
+	Url    string `json:"url"`
+	Method string `json:"method"`
 }
 
-func (i Call) Title() string       { return i.Url }
+func (i Call) Title() string {
+	url := strings.Split(i.Url, "://")
+	if len(url) > 1 {
+		return url[1]
+	}
+	return url[0]
+}
+
+func (i Call) MethodShortView() string {
+	return config.MethodsShort[i.Method]
+}
+
 func (i Call) Description() string { return i.Method }
+
 func (i Call) FilterValue() string { return i.Url }
 
 type App struct {
@@ -171,7 +190,11 @@ func (a *App) AddToCollection(
 	url string,
 	method string,
 ) tea.Cmd {
-	call := Call{Url: url, Method: method}
+	call := Call{
+		ID:     uuid.NewString(),
+		Url:    url,
+		Method: method,
+	}
 	collection := a.GetOrCreateCollection(collectionName)
 
 	// if call already exists in collection update if not append
@@ -186,11 +209,11 @@ func (a *App) AddToCollection(
 		collection.Calls = append(collection.Calls, call)
 	}
 
-  for i, c := range a.Collections {
-    if c.Name == collection.Name {
-      a.Collections[i] = *collection
-    }
-  }
+	for i, c := range a.Collections {
+		if c.Name == collection.Name {
+			a.Collections[i] = *collection
+		}
+	}
 
 	return tea.Batch(
 		a.SaveCollections(),

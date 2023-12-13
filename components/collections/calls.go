@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"restman/app"
-	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
@@ -13,8 +12,8 @@ import (
 )
 
 var (
-	itemStyle         = lipgloss.NewStyle().Italic(true).Bold(false)
-	selectedItemStyle = lipgloss.NewStyle().Italic(true).Foreground(lipgloss.Color("170"))
+	itemStyle         = lipgloss.NewStyle().Faint(true)
+	selectedItemStyle = itemStyle.Copy().Faint(false)
 	paginationStyle   = list.DefaultStyles().PaginationStyle.PaddingLeft(3)
 	helpStyle         = list.DefaultStyles().HelpStyle.PaddingLeft(4).PaddingBottom(1)
 	quitTextStyle     = lipgloss.NewStyle().Margin(1, 0, 2, 4)
@@ -27,17 +26,16 @@ func (d itemDelegate) Spacing() int                            { return 0 }
 func (d itemDelegate) Update(_ tea.Msg, _ *list.Model) tea.Cmd { return nil }
 func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
 	str := list.Item(listItem).(app.Call).Title()
+	method := list.Item(listItem).(app.Call).MethodShortView()
 
-	fn := func(s ...string) string {
-		return itemStyle.Render(" " + strings.Join(s, " "))
-	}
+	style := itemStyle
 	if index == m.Index() {
-		fn = func(s ...string) string {
-			return selectedItemStyle.Render(" " + strings.Join(s, " "))
-		}
+		style = selectedItemStyle
 	}
 
-	fmt.Fprint(w, fn(str))
+	item := style.Render("󰑂 " + method + " " + style.Render(str))
+
+	fmt.Fprint(w, item)
 }
 
 type callModel struct {

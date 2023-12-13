@@ -3,6 +3,7 @@ package url
 import (
 	"restman/app"
 	"restman/components/config"
+	"restman/components/tabs"
 	"restman/utils"
 	"strings"
 
@@ -23,11 +24,6 @@ var (
 		BorderForeground(config.COLOR_HIGHLIGHT).
 		PaddingLeft(1)
 
-	methodStyle = lipgloss.NewStyle().
-			Bold(true).
-			Foreground(config.COLOR_FOREGROUND).
-			Background(config.COLOR_HIGHLIGHT)
-
 	buttonStyle = lipgloss.NewStyle().
 			Bold(true).
 			Foreground(config.COLOR_FOREGROUND).
@@ -43,23 +39,9 @@ var (
 		Foreground(config.COLOR_HIGHLIGHT)
 )
 
-const (
-	GET    = "GET"
-	POST   = "POST"
-	PUT    = "PUT"
-	DELETE = "DELETE"
-)
-
 type MethodColor struct {
 	Method string
 	Color  string
-}
-
-var methodColors = map[string]string{
-	GET:    "#43BF6D",
-	POST:   "#FFB454",
-	PUT:    "#F2C94C",
-	DELETE: "#F25C54",
 }
 
 type Url struct {
@@ -79,7 +61,7 @@ func New() Url {
 	t.Prompt = ""
 	return Url{
 		t:           t,
-		method:      GET,
+		method:      config.GET,
 		placeholder: "Enter URL",
 	}
 }
@@ -101,17 +83,24 @@ func (m Url) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 
-	case app.CallSelectedMsg:
-		m.call = msg.Call
-		m.defaultText = m.call.Url
-		m.t.SetValue(m.defaultText)
+	case tabs.TabFocusedMsg:
+		if msg.Tab.Call != nil {
+			m.call = msg.Tab.Call
+			m.defaultText = m.call.Url
+			m.t.SetValue(m.defaultText)
+      m.method = m.call.Method
+		} else {
+			m.call = nil
+			m.defaultText = ""
+			m.t.SetValue(m.defaultText)
+    }
 
 	case tea.WindowSizeMsg:
 		normal.Width(msg.Width - 2)
 		focused.Width(msg.Width - 2)
 		m.width = msg.Width
 
-		method := methodStyle.Render(" " + m.method + " ")
+		method := config.Methods[m.method]
 		send := buttonStyle.Render(" SEND ")
 
 		m.t.Width = m.width - lipgloss.Width(method) - lipgloss.Width(send) - 10
@@ -147,14 +136,14 @@ func (m *Url) Value() string {
 
 func (m *Url) CycleOverMethods() {
 	switch m.method {
-	case GET:
-		m.method = POST
-	case POST:
-		m.method = PUT
-	case PUT:
-		m.method = DELETE
-	case DELETE:
-		m.method = GET
+	case config.GET:
+		m.method = config.POST
+	case config.POST:
+		m.method = config.PUT
+	case config.PUT:
+		m.method = config.DELETE
+	case config.DELETE:
+		m.method = config.GET
 	}
 }
 
@@ -163,10 +152,10 @@ func (m Url) View() string {
 	if m.focused {
 		style = focused
 	}
-	methodStyle.Background(lipgloss.Color(methodColors[m.method]))
-	method := zone.Mark("method", methodStyle.Render(" "+m.method+" "))
+	method := zone.Mark("method", config.Methods[m.method])
 	send := zone.Mark("send", buttonStyle.Render(" SEND "))
-	save := zone.Mark("save", "󰐒 ")
+	save := zone.Mark("save", " ")
+
 
 	m.t.Width = m.width - lipgloss.Width(method) - lipgloss.Width(send) - 9
 	m.t.Placeholder = m.placeholder + strings.Repeat(" ", utils.MaxInt(0, m.t.Width-len(m.placeholder)+1))

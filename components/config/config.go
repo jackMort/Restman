@@ -1,8 +1,6 @@
 package config
 
 import (
-	"restman/app"
-
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -17,6 +15,20 @@ var (
 	COLOR_GRAY       = lipgloss.AdaptiveColor{Light: "#666666", Dark: "#666666"}
 	COLOR_WHITE      = lipgloss.AdaptiveColor{Light: "#ffffff", Dark: "#ffffff"}
 )
+
+const (
+	GET    = "GET"
+	POST   = "POST"
+	PUT    = "PUT"
+	DELETE = "DELETE"
+)
+
+var methodColors = map[string]string{
+	GET:    "#43BF6D",
+	POST:   "#FFB454",
+	PUT:    "#F2C94C",
+	DELETE: "#F25C54",
+}
 
 var BoxHeader = lipgloss.NewStyle().
 	BorderStyle(lipgloss.NormalBorder()).
@@ -41,10 +53,29 @@ var EmptyMessageStyle = lipgloss.NewStyle().
 	Padding(2, 0).
 	Foreground(COLOR_GRAY)
 
-type WindowFocusedMsg struct {
-	State bool
+var MethodStyleShort = lipgloss.NewStyle().
+	Bold(false)
+
+var MethodStyle = lipgloss.NewStyle().
+	Bold(true).
+	Foreground(COLOR_FOREGROUND).
+	Background(COLOR_HIGHLIGHT).
+  Padding(0, 1)
+
+var Methods = map[string]string{
+	"GET":    MethodStyle.Copy().Background(lipgloss.Color(methodColors["GET"])).Render("GET"),
+	"POST":   MethodStyle.Copy().Background(lipgloss.Color(methodColors["POST"])).Render("POST"),
+	"PUT":    MethodStyle.Copy().Background(lipgloss.Color(methodColors["PUT"])).Render("PUT"),
+	"DELETE": MethodStyle.Copy().Background(lipgloss.Color(methodColors["DELETE"])).Render("DELETE"),
 }
 
-type AppStateChanged struct {
-	State app.App
+var MethodsShort = map[string]string{
+	"GET":    MethodStyleShort.Copy().Foreground(lipgloss.Color(methodColors["GET"])).Render("GET"),
+	"POST":   MethodStyleShort.Copy().Foreground(lipgloss.Color(methodColors["POST"])).Render("POS"),
+	"PUT":    MethodStyleShort.Copy().Foreground(lipgloss.Color(methodColors["PUT"])).Render("PUT"),
+	"DELETE": MethodStyleShort.Copy().Foreground(lipgloss.Color(methodColors["DELETE"])).Render("DEL"),
+}
+
+type WindowFocusedMsg struct {
+	State bool
 }

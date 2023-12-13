@@ -1,6 +1,7 @@
 package tabs
 
 import (
+	"restman/app"
 	"restman/components/config"
 	"restman/utils"
 	"strings"
@@ -15,12 +16,13 @@ var (
 		Border(lipgloss.RoundedBorder()).
 		BorderBottom(false).
 		Padding(0, 1).
-		BorderForeground(config.COLOR_GRAY).
-		Foreground(config.COLOR_GRAY)
+		BorderForeground(config.COLOR_SUBTLE).
+		Foreground(config.COLOR_SUBTLE)
 
 	focused = normal.Copy().
 		BorderForeground(config.COLOR_HIGHLIGHT).
-		Foreground(config.COLOR_HIGHLIGHT)
+		Foreground(config.COLOR_HIGHLIGHT).
+    Bold(true)
 
 	plus = normal.Copy()
 
@@ -49,22 +51,31 @@ func (m model) Init() tea.Cmd {
 	return nil
 }
 
-func (m *model) AddTab() {
+func (m *model) AddTab() (tea.Model, tea.Cmd) {
 	m.tabs = append(m.tabs, NewTab())
-	m.setFocused(len(m.tabs) - 1)
+	return m.setFocused(len(m.tabs) - 1)
 }
 
-func (m *model) setFocused(index int) {
+func (m *model) setFocused(index int) (tea.Model, tea.Cmd) {
 	m.focused = index
+	tab := m.tabs[m.focused]
+	return m, func() tea.Msg {
+		return TabFocusedMsg{Tab: &tab}
+	}
 }
 
-func (m *model) removeTab(index int) {
+func (m *model) removeTab(index int) (tea.Model, tea.Cmd) {
 	if len(m.tabs) > 1 {
 		m.tabs = append(m.tabs[:index], m.tabs[index+1:]...)
 	}
 	if m.focused >= index {
-		m.setFocused(m.focused - 1)
+		newIndex := m.focused - 1
+		if newIndex < 0 {
+			newIndex = 0
+		}
+		return m.setFocused(newIndex)
 	}
+	return m, nil
 }
 
 func (m *model) setName(index int, name string) {
@@ -76,28 +87,42 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.MouseMsg:
 		if msg.Type == tea.MouseLeft {
 			if zone.Get("add-tab").InBounds(msg) {
-				m.AddTab()
+				return m.AddTab()
 			}
 
 			for i := range m.tabs {
 				if zone.Get(utils.Join("tab-", i)).InBounds(msg) {
-					m.setFocused(i)
+					return m.setFocused(i)
+
 				}
 			}
 
 			for i := range m.tabs {
 				if zone.Get(utils.Join("remove-tab-", i)).InBounds(msg) {
-					m.removeTab(i)
+					return m.removeTab(i)
 				}
 			}
 		}
 	case tea.WindowSizeMsg:
 		m.height = msg.Height
 		m.width = msg.Width
+
+	case app.CallSelectedMsg:
+		return m.GetOrCreateTab(msg.Call)
 	}
 
 	var cmd tea.Cmd
 	return m, cmd
+}
+
+func (m *model) GetOrCreateTab(call *app.Call) (tea.Model, tea.Cmd) {
+	for i, tab := range m.tabs {
+		if tab.Call != nil && tab.Call.ID == call.ID {
+			return m.setFocused(i)
+		}
+	}
+	m.tabs = append(m.tabs, NewTabWithCall(call))
+	return m.setFocused(len(m.tabs) - 1)
 }
 
 func (m model) View() string {
@@ -133,7 +158,7 @@ func (m model) View() string {
 			)
 			finalWidth = lipgloss.Width(rendered)
 			if m.width-finalWidth < 7 {
-        finalWidth = finalWidth - lipgloss.Width(tabs[len(tabs)-1])
+				finalWidth = finalWidth - lipgloss.Width(tabs[len(tabs)-1])
 				tabs = tabs[:len(tabs)-1]
 			}
 			// add spacer

@@ -7,6 +7,7 @@ import (
 	"restman/components/auth"
 	"restman/components/config"
 	"restman/components/params"
+	"restman/components/tabs"
 	"strings"
 
 	"github.com/TylerBrock/colorjson"
@@ -94,6 +95,9 @@ func (b Middle) GetContent() tea.Model {
 
 func (b Middle) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+
+	case tabs.TabFocusedMsg:
+   b.body = ""
 
 	case tea.WindowSizeMsg:
 		testStyle.Width(msg.Width - 2)

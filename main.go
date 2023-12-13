@@ -56,13 +56,13 @@ func main() {
 	middle := results.New()
 	footerBox := footer.New()
 	colBox := collections.New()
-  tabs := tabs.New()
+	tabs := tabs.New()
 
 	centerNode := boxer.CreateNoBorderNode()
 	centerNode.VerticalStacked = true
 	centerNode.SizeFunc = func(node boxer.Node, widthOrHeight int) []int {
 		return []int{
-      2,
+			2,
 			3,
 			widthOrHeight - 5,
 		}
@@ -207,10 +207,10 @@ func (m Model) getMiddlePane() *results.Middle {
 	return &middle
 }
 
-func (m Model) AddToCollection () tea.Cmd {
-  url := m.getUrlPane()
-  coll := m.popup.(collections.AddToCollection)
-  return app.GetInstance().AddToCollection(coll.CollectionName(), url.Value(), url.Method())
+func (m Model) AddToCollection() tea.Cmd {
+	url := m.getUrlPane()
+	coll := m.popup.(collections.AddToCollection)
+	return app.GetInstance().AddToCollection(coll.CollectionName(), url.Value(), url.Method())
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -370,9 +370,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.tui.UpdateSize(msg)
 
 	default:
-		// TODO: is this make sense?
+		var cmd tea.Cmd
 		for key, element := range m.tui.ModelMap {
-			m.tui.ModelMap[key], _ = element.Update(msg)
+			m.tui.ModelMap[key], cmd = element.Update(msg)
+			cmds = append(cmds, cmd)
 		}
 	}
 
