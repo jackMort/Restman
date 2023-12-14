@@ -10,6 +10,8 @@ type CollectionSelectedMsg struct{ Collection *Collection }
 
 type CallSelectedMsg struct{ Call *Call }
 
+type CallUpdatedMsg struct{ Call *Call }
+
 type OnResponseMsg struct {
 	Call     *Call
 	Body     string

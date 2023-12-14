@@ -123,14 +123,27 @@ func (m Url) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				call.Method = m.method
 				return m, app.GetInstance().GetResponse(call)
 			}
-
 		case "ctrl+r":
 			m.CycleOverMethods()
+
+		default:
+			var cmds []tea.Cmd
+
+			newModel, cmd := m.t.Update(msg)
+			cmds = append(cmds, cmd)
+
+			m.t = newModel
+
+			m.call.Url = m.t.Value()
+			cmds = append(cmds, func() tea.Msg { return app.CallUpdatedMsg{Call: m.call} })
+
+			return m, tea.Batch(cmds...)
 		}
 	}
 
 	newModel, cmd := m.t.Update(msg)
 	m.t = newModel
+
 	return m, cmd
 }
 

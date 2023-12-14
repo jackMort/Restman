@@ -126,6 +126,14 @@ func (m Tabs) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case app.CallSelectedMsg:
 		return m.GetOrCreateTab(msg.Call)
+
+	case app.CallUpdatedMsg:
+		tab, index := m.GetTab(msg.Call)
+		if tab != nil {
+      m.tabs[index].Name = msg.Call.Title()
+      m.tabs[index].Call = msg.Call
+			return m.setFocused(index)
+		}
 	}
 
 	var cmd tea.Cmd
