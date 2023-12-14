@@ -152,3 +152,5 @@ func findPrintIndex(str string, index int) int {
 
 	return -1
 }
+
+type ClosePopupMsg struct{}

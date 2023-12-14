@@ -233,6 +233,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 
+  case popup.ClosePopupMsg:
+		m.popup = nil
+
 	case tea.MouseMsg:
 		if msg.Type == tea.MouseLeft {
 			if zone.Get("method").InBounds(msg) {
