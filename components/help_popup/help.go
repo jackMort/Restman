@@ -11,9 +11,7 @@ import (
 var (
 	general = lipgloss.NewStyle().
 		UnsetAlign().
-		Padding(0, 1, 0, 1).
 		Foreground(config.COLOR_FOREGROUND).
-		Border(lipgloss.RoundedBorder()).
 		BorderForeground(config.COLOR_HIGHLIGHT)
 )
 
@@ -44,11 +42,10 @@ func (c Help) View() string {
 ██║  ██║███████╗███████║   ██║   ██║ ╚═╝ ██║██║  ██║██║ ╚████║
 ╚═╝  ╚═╝╚══════╝╚══════╝   ╚═╝   ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝
                                                         v0.0.2
-
 `
-	iconStyle := lipgloss.NewStyle().Foreground(config.COLOR_SUBTLE)
+	iconStyle := lipgloss.NewStyle().Foreground(config.COLOR_HIGHLIGHT)
 	ui := iconStyle.Render(lipgloss.JoinVertical(lipgloss.Left, icon, ""))
-	dialog := lipgloss.Place(c.overlay.Width()-2, c.overlay.Height()-2, lipgloss.Left, lipgloss.Top, ui)
+	dialog := lipgloss.Place(c.overlay.Width()-2, c.overlay.Height(), lipgloss.Left, lipgloss.Top, ui)
 
 	return c.overlay.WrapView(general.Render(dialog))
 }

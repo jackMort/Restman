@@ -1,11 +1,13 @@
 package tabs
 
 import (
+	"encoding/json"
 	"restman/app"
 	"restman/components/config"
 	"restman/utils"
 	"strings"
 
+	"github.com/TylerBrock/colorjson"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	zone "github.com/lrstanley/bubblezone"
@@ -22,7 +24,7 @@ var (
 	focused = normal.Copy().
 		BorderForeground(config.COLOR_HIGHLIGHT).
 		Foreground(config.COLOR_HIGHLIGHT).
-    Bold(true)
+		Bold(true)
 
 	plus = normal.Copy()
 
@@ -32,31 +34,30 @@ var (
 		Foreground(config.COLOR_GRAY)
 )
 
-type model struct {
+type Tabs struct {
 	height  int
 	width   int
 	tabs    []Tab
 	focused int
 }
 
-func New() model {
-	tab := NewTab()
-	return model{
-		tabs:    []Tab{tab},
+func New() Tabs {
+	return Tabs{
+		tabs:    []Tab{},
 		focused: 0,
 	}
 }
 
-func (m model) Init() tea.Cmd {
+func (m Tabs) Init() tea.Cmd {
 	return nil
 }
 
-func (m *model) AddTab() (tea.Model, tea.Cmd) {
+func (m *Tabs) AddTab() (tea.Model, tea.Cmd) {
 	m.tabs = append(m.tabs, NewTab())
 	return m.setFocused(len(m.tabs) - 1)
 }
 
-func (m *model) setFocused(index int) (tea.Model, tea.Cmd) {
+func (m *Tabs) setFocused(index int) (tea.Model, tea.Cmd) {
 	m.focused = index
 	tab := m.tabs[m.focused]
 	return m, func() tea.Msg {
@@ -64,7 +65,7 @@ func (m *model) setFocused(index int) (tea.Model, tea.Cmd) {
 	}
 }
 
-func (m *model) removeTab(index int) (tea.Model, tea.Cmd) {
+func (m *Tabs) removeTab(index int) (tea.Model, tea.Cmd) {
 	if len(m.tabs) > 1 {
 		m.tabs = append(m.tabs[:index], m.tabs[index+1:]...)
 	}
@@ -78,12 +79,28 @@ func (m *model) removeTab(index int) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m *model) setName(index int, name string) {
+func (m *Tabs) setName(index int, name string) {
 	m.tabs[index].Name = name
 }
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Tabs) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case app.OnResponseMsg:
+		if msg.Body != "" {
+			tab, index := m.GetTab(msg.Call)
+			if tab != nil {
+				f := colorjson.NewFormatter()
+				f.Indent = 2
+
+				var obj interface{}
+				json.Unmarshal([]byte(msg.Body), &obj)
+				s, _ := f.Marshal(obj)
+				m.tabs[index].Results = string(s)
+			} else {
+				m.tabs[index].Results = "No response"
+			}
+			return m.setFocused(index)
+		}
 	case tea.MouseMsg:
 		if msg.Type == tea.MouseLeft {
 			if zone.Get("add-tab").InBounds(msg) {
@@ -115,7 +132,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m *model) GetOrCreateTab(call *app.Call) (tea.Model, tea.Cmd) {
+func (m *Tabs) GetOrCreateTab(call *app.Call) (tea.Model, tea.Cmd) {
 	for i, tab := range m.tabs {
 		if tab.Call != nil && tab.Call.ID == call.ID {
 			return m.setFocused(i)
@@ -125,7 +142,16 @@ func (m *model) GetOrCreateTab(call *app.Call) (tea.Model, tea.Cmd) {
 	return m.setFocused(len(m.tabs) - 1)
 }
 
-func (m model) View() string {
+func (m *Tabs) GetTab(call *app.Call) (*Tab, int) {
+	for i, tab := range m.tabs {
+		if tab.Call != nil && tab.Call.ID == call.ID {
+			return &tab, i
+		}
+	}
+	return nil, 0
+}
+
+func (m Tabs) View() string {
 	tabs := []string{}
 
 	add := zone.Mark("add-tab", plus.Render(""))

@@ -44,6 +44,13 @@ type Call struct {
 	Method string `json:"method"`
 }
 
+func NewCall() *Call {
+	return &Call{
+		ID: uuid.NewString(),
+    Method: "GET",
+	}
+}
+
 func (i Call) Title() string {
 	url := strings.Split(i.Url, "://")
 	if len(url) > 1 {
@@ -113,18 +120,18 @@ func (a *App) SetFocused(item string) tea.Cmd {
 	}
 }
 
-func (a *App) GetResponse(url string) tea.Cmd {
+func (a *App) GetResponse(call *Call) tea.Cmd {
 	return tea.Batch(
 		// set loading
 		func() tea.Msg {
-			return OnLoadingMsg{Url: url}
+			return OnLoadingMsg{Call: call}
 
 		},
 		// fetch response
 		func() tea.Msg {
 			params := utils.HTTPRequestParams{
-				Method:   "GET",
-				URL:      url,
+				Method:   call.Method,
+				URL:      call.Url,
 				Username: "u",
 				Password: "p",
 				Headers: map[string]string{
@@ -143,7 +150,7 @@ func (a *App) GetResponse(url string) tea.Cmd {
 				// TODO
 				os.Exit(1)
 			}
-			return OnResponseMsg{Body: string(body), Err: err, Response: response}
+			return OnResponseMsg{Call: call, Body: string(body), Err: err, Response: response}
 		})
 }
 

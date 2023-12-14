@@ -59,7 +59,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width - 2
 
 	case app.OnLoadingMsg:
-		m.url = msg.Url
+		m.url = msg.Call.Url
 		m.loading = true
 		return m, tea.Batch(m.stopwatch.Reset(), m.stopwatch.Start(), m.spinner.Tick)
 

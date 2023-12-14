@@ -133,14 +133,21 @@ type Model struct {
 }
 
 func (m Model) Init() tea.Cmd {
-	var cmd tea.Cmd
+	var (
+		cmd  tea.Cmd
+		cmd2 tea.Cmd
+	)
 
 	m.focused = "url"
 	m.tui.ModelMap[m.focused], cmd = m.tui.ModelMap[m.focused].Update(config.WindowFocusedMsg{State: true})
 
+  tabs := m.tui.ModelMap["tabs"].(tabs.Tabs)
+	m.tui.ModelMap["tabs"], cmd2 = tabs.AddTab()
+
 	return tea.Batch(
 		app.GetInstance().ReadCollectionsFromJSON(),
 		cmd,
+		cmd2,
 	)
 }
 
@@ -328,7 +335,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.popup = collections.NewCreate(m.View(), utils.MinInt(70, 100))
 				return m, m.popup.Init()
 
-			case "shift+h":
+			case "?":
 				m.popup = help.NewHelp(m.View(), 50)
 				return m, m.popup.Init()
 

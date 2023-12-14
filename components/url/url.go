@@ -88,12 +88,12 @@ func (m Url) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.call = msg.Tab.Call
 			m.defaultText = m.call.Url
 			m.t.SetValue(m.defaultText)
-      m.method = m.call.Method
+			m.method = m.call.Method
 		} else {
 			m.call = nil
 			m.defaultText = ""
 			m.t.SetValue(m.defaultText)
-    }
+		}
 
 	case tea.WindowSizeMsg:
 		normal.Width(msg.Width - 2)
@@ -117,8 +117,12 @@ func (m Url) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "enter":
-			url := m.t.Prompt + m.t.Value()
-			return m, app.GetInstance().GetResponse(url)
+			call := m.call
+			if m.call != nil {
+				call.Url = m.t.Prompt + m.t.Value()
+				call.Method = m.method
+				return m, app.GetInstance().GetResponse(call)
+			}
 
 		case "ctrl+r":
 			m.CycleOverMethods()
@@ -155,7 +159,6 @@ func (m Url) View() string {
 	method := zone.Mark("method", config.Methods[m.method])
 	send := zone.Mark("send", buttonStyle.Render(" SEND "))
 	save := zone.Mark("save", " ")
-
 
 	m.t.Width = m.width - lipgloss.Width(method) - lipgloss.Width(send) - 9
 	m.t.Placeholder = m.placeholder + strings.Repeat(" ", utils.MaxInt(0, m.t.Width-len(m.placeholder)+1))

@@ -1,16 +1,13 @@
 package results
 
 import (
-	"encoding/json"
 	"net/url"
-	"restman/app"
 	"restman/components/auth"
 	"restman/components/config"
 	"restman/components/params"
 	"restman/components/tabs"
 	"strings"
 
-	"github.com/TylerBrock/colorjson"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -97,7 +94,8 @@ func (b Middle) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	case tabs.TabFocusedMsg:
-   b.body = ""
+		b.body = msg.Tab.Results
+		b.viewport.SetContent(string(b.body))
 
 	case tea.WindowSizeMsg:
 		testStyle.Width(msg.Width - 2)
@@ -121,27 +119,6 @@ func (b Middle) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case config.WindowFocusedMsg:
 		b.focused = msg.State
 
-	case app.OnLoadingMsg:
-		b.url = msg.Url
-
-	case app.OnResponseMsg:
-		if msg.Body != "" {
-			b.body = msg.Body
-
-			// Create an intersting JSON object to marshal in a pretty format
-			f := colorjson.NewFormatter()
-			f.Indent = 2
-
-			var obj interface{}
-			json.Unmarshal([]byte(b.body), &obj)
-			s, _ := f.Marshal(obj)
-			b.viewport.SetContent(string(s))
-		} else {
-
-			b.body = "No response"
-			b.viewport.SetContent(emptyMessage.Render(b.body))
-		}
-
 	}
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
@@ -157,8 +134,8 @@ func (b Middle) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (b *Middle) SetActiveTab(tab int) {
-  b.activeTab = tab
-  b.content = b.GetContent()
+	b.activeTab = tab
+	b.content = b.GetContent()
 }
 
 func (b Middle) View() string {
