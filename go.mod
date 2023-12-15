@@ -6,10 +6,11 @@ toolchain go1.21.3
 
 require (
 	github.com/TylerBrock/colorjson v0.0.0-20200706003622-8a50f05110d2
-	github.com/charmbracelet/bubbles v0.16.2-0.20231013123227-167e9067bc4e
-	github.com/charmbracelet/bubbletea v0.24.2
+	github.com/charmbracelet/bubbles v0.17.1
+	github.com/charmbracelet/bubbletea v0.25.0
 	github.com/charmbracelet/lipgloss v0.9.1
 	github.com/evertras/bubble-table v0.15.6
+	github.com/google/uuid v1.5.0
 	github.com/lrstanley/bubblezone v0.0.0-20230911164824-e3824f1adde9
 	github.com/muesli/ansi v0.0.0-20230316100256-276c6243b2f6
 	github.com/treilik/bubbleboxer v0.2.0
@@ -20,7 +21,6 @@ require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/containerd/console v1.0.4-0.20230313162750-1ae8d489ac81 // indirect
 	github.com/fatih/color v1.16.0 // indirect
-	github.com/google/uuid v1.4.0 // indirect
 	github.com/hokaccha/go-prettyjson v0.0.0-20211117102719-0474bc63780f // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect

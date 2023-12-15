@@ -29,6 +29,12 @@ type Collection struct {
 	Auth    *Auth  `json:"auth"`
 }
 
+func NewCollection() Collection {
+	return Collection{
+		ID: uuid.NewString(),
+	}
+}
+
 func (i Collection) Title() string { return i.Name }
 func (i Collection) Description() string {
 	if i.BaseUrl != "" {
@@ -159,7 +165,9 @@ func (a *App) GetResponse(call *Call) tea.Cmd {
 }
 
 func (a *App) CreateCollection(title string, url string) tea.Cmd {
-	collection := Collection{Name: title, BaseUrl: url}
+	collection := NewCollection()
+	collection.Name = title
+	collection.BaseUrl = url
 
 	return func() tea.Msg {
 		configDir, _ := os.UserConfigDir()
@@ -191,7 +199,8 @@ func (a *App) GetOrCreateCollection(name string) *Collection {
 			return &c
 		}
 	}
-	collection := Collection{Name: name}
+	collection := NewCollection()
+	collection.Name = name
 	a.Collections = append(a.Collections, collection)
 	return &collection
 }

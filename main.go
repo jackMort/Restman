@@ -387,10 +387,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	var cmdF tea.Cmd
-	m.tui.ModelMap["footer"], cmdF = m.tui.ModelMap["footer"].Update(msg)
-	cmds = append(cmds, cmdF)
-
 	cmds = append(cmds, cmd)
 	return m, tea.Batch(cmds...)
 }

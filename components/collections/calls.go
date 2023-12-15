@@ -39,7 +39,8 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 }
 
 type callModel struct {
-	list list.Model
+	list       list.Model
+	collection *app.Collection
 }
 
 func NewCallModel() callModel {
@@ -75,7 +76,22 @@ func (m callModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 
+	case app.FetchCollectionsSuccessMsg:
+		if m.collection != nil {
+			items := []list.Item{}
+			for i, collection := range msg.Collections {
+				if collection.ID == m.collection.ID {
+					for _, call := range msg.Collections[i].Calls {
+						items = append(items, call)
+					}
+				}
+			}
+			return m, m.list.SetItems(items)
+		}
+
 	case app.CollectionSelectedMsg:
+    m.collection = msg.Collection
+
 		items := []list.Item{}
 		for _, call := range msg.Collection.Calls {
 			items = append(items, call)
