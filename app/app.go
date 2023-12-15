@@ -46,17 +46,21 @@ type Call struct {
 
 func NewCall() *Call {
 	return &Call{
-		ID: uuid.NewString(),
-    Method: "GET",
+		ID:     uuid.NewString(),
+		Method: "GET",
 	}
 }
 
 func (i Call) Title() string {
 	url := strings.Split(i.Url, "://")
-	if len(url) > 1 {
+	if len(url) > 1 && url[1] != "" {
 		return url[1]
 	}
-	return url[0]
+	if url[0] != "" && url[0] != "http" && url[0] != "https" {
+		return url[0]
+	}
+
+	return "untitled"
 }
 
 func (i Call) MethodShortView() string {
