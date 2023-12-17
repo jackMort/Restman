@@ -13,6 +13,8 @@ import (
 var (
 	general = lipgloss.NewStyle().
 		UnsetAlign().
+    Padding(1, 2).
+		Border(lipgloss.RoundedBorder()).
 		Foreground(config.COLOR_FOREGROUND).
 		BorderForeground(config.COLOR_HIGHLIGHT)
 )
@@ -80,7 +82,7 @@ func NewHelp(bgRaw string, width int) Help {
 	return Help{
 		help:    help,
 		keys:    keys,
-		overlay: popup.NewOverlay(bgRaw, width, 13),
+		overlay: popup.NewOverlay(bgRaw, width, 20),
 	}
 }
 
@@ -116,7 +118,11 @@ func (c Help) View() string {
 `
 	helpView := c.help.View(c.keys)
 	iconStyle := lipgloss.NewStyle().Foreground(config.COLOR_HIGHLIGHT)
-	ui := iconStyle.Render(lipgloss.JoinVertical(lipgloss.Left, icon, "", helpView))
+	ui := iconStyle.Render(lipgloss.JoinVertical(
+		lipgloss.Center,
+		icon,
+		general.Width(c.overlay.Width()).Render(helpView)),
+	)
 	dialog := lipgloss.Place(c.overlay.Width()-2, c.overlay.Height(), lipgloss.Left, lipgloss.Top, ui)
 
 	return c.overlay.WrapView(dialog)

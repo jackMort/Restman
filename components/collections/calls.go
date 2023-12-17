@@ -33,6 +33,9 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 		style = selectedItemStyle
 	}
 
+  // TODO make some elipsis for long text
+  style = style.MaxWidth(25)
+
 	item := style.Render("󰑂 " + method + " " + style.Render(str))
 
 	fmt.Fprint(w, item)

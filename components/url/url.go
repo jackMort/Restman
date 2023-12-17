@@ -74,8 +74,22 @@ func (m Url) Method() string {
 	return m.method
 }
 
+func (m Url) Call() *app.Call {
+	return m.call
+}
+
 func (m Url) Init() tea.Cmd {
 	return nil
+}
+
+func (m Url) Submit() (tea.Model, tea.Cmd) {
+	call := m.call
+	if m.call != nil {
+		call.Url = m.t.Prompt + m.t.Value()
+		call.Method = m.method
+		return m, app.GetInstance().GetResponse(call)
+	}
+	return m, nil
 }
 
 func (m Url) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -117,12 +131,7 @@ func (m Url) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "enter":
-			call := m.call
-			if m.call != nil {
-				call.Url = m.t.Prompt + m.t.Value()
-				call.Method = m.method
-				return m, app.GetInstance().GetResponse(call)
-			}
+			return m.Submit()
 		case "ctrl+r":
 			m.CycleOverMethods()
 

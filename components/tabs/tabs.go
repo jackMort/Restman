@@ -87,17 +87,18 @@ func (m Tabs) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case app.OnResponseMsg:
 		if msg.Body != "" {
-			tab, index := m.GetTab(msg.Call)
-			if tab != nil {
-				f := colorjson.NewFormatter()
-				f.Indent = 2
+			_, index := m.GetTab(msg.Call)
+			f := colorjson.NewFormatter()
+			f.Indent = 2
 
-				var obj interface{}
-				json.Unmarshal([]byte(msg.Body), &obj)
+			var obj interface{}
+			json.Unmarshal([]byte(msg.Body), &obj)
+			if obj == nil {
+
+				m.tabs[index].Results = msg.Body
+			} else {
 				s, _ := f.Marshal(obj)
 				m.tabs[index].Results = string(s)
-			} else {
-				m.tabs[index].Results = "No response"
 			}
 			return m.setFocused(index)
 		}
@@ -130,8 +131,8 @@ func (m Tabs) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case app.CallUpdatedMsg:
 		tab, index := m.GetTab(msg.Call)
 		if tab != nil {
-      m.tabs[index].Name = msg.Call.Title()
-      m.tabs[index].Call = msg.Call
+			m.tabs[index].Name = msg.Call.Title()
+			m.tabs[index].Call = msg.Call
 			return m.setFocused(index)
 		}
 	}
@@ -165,7 +166,11 @@ func (m Tabs) View() string {
 	add := zone.Mark("add-tab", plus.Render(""))
 	for i, tab := range m.tabs {
 		close := zone.Mark(utils.Join("remove-tab-", i), "󰅙")
-		title := zone.Mark(utils.Join("tab-", i), " "+tab.Name)
+		icon := " "
+		if tab.Call.Collection() == nil {
+			icon = ""
+		}
+		title := zone.Mark(utils.Join("tab-", i), icon+" "+tab.Name)
 
 		style := normal
 		if m.focused == i {

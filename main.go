@@ -141,7 +141,7 @@ func (m Model) Init() tea.Cmd {
 	m.focused = "url"
 	m.tui.ModelMap[m.focused], cmd = m.tui.ModelMap[m.focused].Update(config.WindowFocusedMsg{State: true})
 
-  tabs := m.tui.ModelMap["tabs"].(tabs.Tabs)
+	tabs := m.tui.ModelMap["tabs"].(tabs.Tabs)
 	m.tui.ModelMap["tabs"], cmd2 = tabs.AddTab()
 
 	return tea.Batch(
@@ -217,7 +217,10 @@ func (m Model) getMiddlePane() *results.Middle {
 func (m Model) AddToCollection() tea.Cmd {
 	url := m.getUrlPane()
 	coll := m.popup.(collections.AddToCollection)
-	return app.GetInstance().AddToCollection(coll.CollectionName(), url.Value(), url.Method())
+	call := url.Call()
+	call.Url = url.Value()
+	call.Method = url.Method()
+	return app.GetInstance().AddToCollection(coll.CollectionName(), call)
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -233,7 +236,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 
-  case popup.ClosePopupMsg:
+	case popup.ClosePopupMsg:
 		m.popup = nil
 
 	case tea.MouseMsg:
@@ -249,6 +252,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			} else if zone.Get("send").InBounds(msg) {
 				m.SetFocused("url")
+				url := m.getUrlPane()
+				_, cmd = url.Submit()
+				m.tui.ModelMap["url"] = url
+        return m, cmd
 
 			} else if zone.Get("save").InBounds(msg) {
 				m.SetFocused("url")
@@ -339,7 +346,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, m.popup.Init()
 
 			case "?":
-				m.popup = help.NewHelp(m.View(), 50)
+				m.popup = help.NewHelp(m.View(), 70)
 				return m, m.popup.Init()
 
 			case "ctrl+s":

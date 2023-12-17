@@ -69,6 +69,18 @@ func (i Call) Title() string {
 	return "untitled"
 }
 
+func (i Call) Collection() *Collection {
+	app := GetInstance()
+	for _, c := range app.Collections {
+		for _, call := range c.Calls {
+			if call.ID == i.ID {
+				return &c
+			}
+		}
+	}
+	return nil
+}
+
 func (i Call) MethodShortView() string {
 	return config.MethodsShort[i.Method]
 }
@@ -131,7 +143,7 @@ func (a *App) SetFocused(item string) tea.Cmd {
 }
 
 func (a *App) GetResponse(call *Call) tea.Cmd {
-	return tea.Batch(
+	return tea.Sequence(
 		// set loading
 		func() tea.Msg {
 			return OnLoadingMsg{Call: call}
@@ -140,27 +152,19 @@ func (a *App) GetResponse(call *Call) tea.Cmd {
 		// fetch response
 		func() tea.Msg {
 			params := utils.HTTPRequestParams{
-				Method:   call.Method,
-				URL:      call.Url,
-				Username: "u",
-				Password: "p",
+				Method:  call.Method,
+				URL:     call.Url,
 				Headers: map[string]string{
-					"Content-Type": "application/json",
+					// "Content-Type": "application/json",
 				},
 			}
 			response, err := utils.MakeRequest(params)
-			if err != nil {
-				fmt.Println("Error making request:", err)
-				os.Exit(1)
+			if err == nil {
+				defer response.Body.Close()
+				body, err := io.ReadAll(response.Body)
+				return OnResponseMsg{Call: call, Body: string(body), Err: err, Response: response}
 			}
-			defer response.Body.Close()
-			body, err := io.ReadAll(response.Body)
-			if err != nil {
-				fmt.Println("Error reading response body:", err)
-				// TODO
-				os.Exit(1)
-			}
-			return OnResponseMsg{Call: call, Body: string(body), Err: err, Response: response}
+			return OnResponseMsg{Call: call, Err: err, Response: response}
 		})
 }
 
@@ -207,26 +211,20 @@ func (a *App) GetOrCreateCollection(name string) *Collection {
 
 func (a *App) AddToCollection(
 	collectionName string,
-	url string,
-	method string,
+	call *Call,
 ) tea.Cmd {
-	call := Call{
-		ID:     uuid.NewString(),
-		Url:    url,
-		Method: method,
-	}
 	collection := a.GetOrCreateCollection(collectionName)
 
 	// if call already exists in collection update if not append
 	var exists bool
 	for i, c := range collection.Calls {
-		if c.Url == call.Url && c.Method == call.Method {
+		if c.ID == call.ID {
 			exists = true
-			collection.Calls[i] = call
+			collection.Calls[i] = *call
 		}
 	}
 	if !exists {
-		collection.Calls = append(collection.Calls, call)
+		collection.Calls = append(collection.Calls, *call)
 	}
 
 	for i, c := range a.Collections {

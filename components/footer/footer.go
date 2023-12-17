@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/stopwatch"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -32,8 +31,8 @@ type model struct {
 	width      int
 	url        string
 	loading    bool
-	spinner    spinner.Model
 	statusCode int
+	error      error
 }
 
 // New creates a new instance of the UI.
@@ -45,10 +44,7 @@ func New() model {
 
 // Init intializes the UI.
 func (m model) Init() tea.Cmd {
-	m.spinner = spinner.New()
-	m.spinner.Spinner = spinner.Line
-
-	return tea.Batch(m.stopwatch.Init(), m.spinner.Tick)
+	return m.stopwatch.Init()
 }
 
 // Update handles all UI interactions.
@@ -59,20 +55,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width - 2
 
 	case app.OnLoadingMsg:
+		m.error = nil
 		m.url = msg.Call.Url
 		m.loading = true
-		return m, tea.Batch(m.stopwatch.Reset(), m.stopwatch.Start(), m.spinner.Tick)
+		return m, tea.Sequence(m.stopwatch.Reset(), m.stopwatch.Start())
 
 	case app.OnResponseMsg:
+		if msg.Err == nil {
+			m.statusCode = msg.Response.StatusCode
+		}
+		m.error = msg.Err
 		m.loading = false
-		m.statusCode = msg.Response.StatusCode
 		return m, m.stopwatch.Stop()
-
-	case spinner.TickMsg:
-		var cmd tea.Cmd
-		m.spinner, cmd = m.spinner.Update(msg)
-		return m, cmd
-
 	}
 
 	var cmd tea.Cmd
@@ -87,6 +81,9 @@ func (m model) View() string {
 	if m.loading {
 		status = "󰞉 LOADING"
 		color = "#F59E0B"
+	} else if m.error != nil {
+		status = " ERROR: " + m.error.Error()
+		color = "#EF4444"
 	} else if m.statusCode > 0 {
 		status = "󰞉 STATUS: " + strconv.Itoa(m.statusCode)
 		if m.statusCode >= 200 && m.statusCode < 300 {
