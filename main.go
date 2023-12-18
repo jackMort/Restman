@@ -7,7 +7,7 @@ import (
 	"restman/components/collections"
 	"restman/components/config"
 	"restman/components/footer"
-	"restman/components/help_popup"
+	help "restman/components/help_popup"
 	"restman/components/popup"
 	"restman/components/results"
 	"restman/components/tabs"

@@ -58,14 +58,18 @@ func NewCall() *Call {
 }
 
 func (i Call) Title() string {
-	url := strings.Split(i.Url, "://")
-	if len(url) > 1 && url[1] != "" {
-		return url[1]
+	switch i.Url {
+	case "h", "ht", "htt", "http", "https", "https:", "http:", "http:/", "https:/", "http://", "https://":
+		return i.Url
+	default:
+		url := strings.Split(i.Url, "://")
+		if len(url) > 1 && url[1] != "" {
+			return url[1]
+		}
+		if url[0] != "" && url[0] != "http" && url[0] != "https" {
+			return url[0]
+		}
 	}
-	if url[0] != "" && url[0] != "http" && url[0] != "https" {
-		return url[0]
-	}
-
 	return "untitled"
 }
 
