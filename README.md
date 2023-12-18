@@ -1,8 +1,10 @@
 # Restman
 ![GitHub Workflow Status](http://img.shields.io/github/actions/workflow/status/jackMort/Restman/go.yml?branch=main&style=for-the-badge)
 ![GO](https://img.shields.io/badge/Made%20with%20GO-white.svg?style=for-the-badge&logo=go)
+
 `Restman` is a command-line tool for interacting with RESTful APIs, featuring a TUI (Text-based User Interface). It's designed for developers who prefer to work within the terminal environment, offering a convenient and efficient way to test and debug APIs.
 ![preview image](https://github.com/jackMort/Restman/blob/media/preview.png?raw=true)
+
 ## Table of Contents
 - [Installation](#installation)
 - [Usage](#usage)
@@ -54,6 +56,7 @@ For a list of commands and options, use the help command:
 ```bash
 restman --help
 ```
+
 ## Features
 - Intuitive Text-based User Interface (TUI)
 - Support for various HTTP methods (GET, POST, PUT, DELETE, etc.)
@@ -61,6 +64,7 @@ restman --help
 - Custom headers and body content
 - Response highlighting for easy reading
 - SSL/TLS support
+
 ## Configuration
 Restman can be configured using a `.restmanrc` file in your home directory. Here's an example configuration:
 ```json
@@ -71,6 +75,7 @@ Restman can be configured using a `.restmanrc` file in your home directory. Here
   }
 }
 ```
+
 ## Contributing
 Contributions are welcome! If you'd like to contribute, please follow these steps:
 1. Fork the repository.
@@ -80,5 +85,6 @@ Contributions are welcome! If you'd like to contribute, please follow these step
 5. Ensure your code passes all tests.
 6. Submit a pull request against the main branch.
 Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
+
 ## License
-Restman is released under the MIT License. See the bundled [LICENSE](LICENSE) file for details.
+Restman is released under the GPL-3.0 License. See the bundled [LICENSE](LICENSE) file for details.
