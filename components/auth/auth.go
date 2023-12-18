@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"restman/app"
 	"restman/components/config"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -48,9 +49,10 @@ type Model struct {
 	inputs  []textinput.Model
 	focused int
 	method  string
+	call    *app.Call
 }
 
-func New(width int) Model {
+func New(width int, call *app.Call) Model {
 	var inputs []textinput.Model = make([]textinput.Model, 5)
 	inputs[USERNAME_IDX] = textinput.New()
 	inputs[USERNAME_IDX].Placeholder = "username"
@@ -75,10 +77,27 @@ func New(width int) Model {
 	inputs[API_VALUE_IDX].Placeholder = "value"
 	inputs[API_VALUE_IDX].Prompt = "󰌆  "
 
+	method := INHERIT
+	if call != nil && call.Auth != nil {
+		method = call.Auth.Type
+
+		switch call.Auth.Type {
+		case "basic_auth":
+			inputs[USERNAME_IDX].SetValue(call.Auth.Username)
+			inputs[PASSWORD_IDX].SetValue(call.Auth.Password)
+		case "bearer_token":
+			inputs[TOKEN_IDX].SetValue(call.Auth.Token)
+		case "api_key":
+			inputs[API_KEY_IDX].SetValue(call.Auth.HeaderName)
+			inputs[API_VALUE_IDX].SetValue(call.Auth.HeaderValue)
+		}
+	}
+
 	return Model{
 		inputs:  inputs,
 		focused: 0,
-		method:  INHERIT,
+		method:  method,
+		call:    call,
 	}
 }
 
@@ -101,7 +120,7 @@ func (c *Model) prevInput() {
 	}
 }
 
-func (c *Model) nextMethod() {
+func (c *Model) nextMethod() tea.Cmd {
 	switch c.method {
 	case INHERIT:
 		c.method = NONE
@@ -117,6 +136,23 @@ func (c *Model) nextMethod() {
 	case API_KEY:
 		c.method = INHERIT
 	}
+	return app.GetInstance().SetCallAuthType(c.call, c.method)
+}
+
+func (c Model) getKey() string {
+	switch c.focused {
+	case USERNAME_IDX:
+		return "username"
+	case PASSWORD_IDX:
+		return "password"
+	case TOKEN_IDX:
+		return "token"
+	case API_KEY_IDX:
+		return "header_name"
+	case API_VALUE_IDX:
+		return "header_value"
+	}
+	return ""
 }
 
 // Update handles messages.
@@ -126,8 +162,7 @@ func (c Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.MouseMsg:
 		if msg.Type == tea.MouseLeft {
 			if zone.Get("auth_method").InBounds(msg) {
-				c.nextMethod()
-				return c, nil
+				return c, c.nextMethod()
 			}
 		}
 	}
@@ -141,19 +176,24 @@ func (c Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case tea.KeyEnter:
 			c.nextInput()
-			// return c, tea.Batch(
-			// 	app.GetInstance().CreateCollection(
-			// 		c.inputs[TITLE_IDX].Value(),
-			// 		c.inputs[BASE_URL_IDX].Value(),
-			// 	),
-			// 	c.makeChoice(),
-			// )
 		case tea.KeyCtrlC, tea.KeyEsc:
 			return c, c.makeChoice()
 		case tea.KeyShiftTab, tea.KeyCtrlP:
 			c.prevInput()
 		case tea.KeyTab, tea.KeyCtrlN:
 			c.nextInput()
+		default:
+			var cmd tea.Cmd
+			c.inputs[c.focused], cmd = c.inputs[c.focused].Update(msg)
+
+			key := c.getKey()
+			value := c.inputs[c.focused].Value()
+
+			return c, tea.Sequence(
+				cmd,
+				app.GetInstance().SetCallAuthValue(c.call, key, value),
+			)
+
 		}
 		for i := range c.inputs {
 			c.inputs[i].Blur()

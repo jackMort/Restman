@@ -2,6 +2,7 @@ package results
 
 import (
 	"net/url"
+	"restman/app"
 	"restman/components/auth"
 	"restman/components/config"
 	"restman/components/params"
@@ -67,6 +68,7 @@ type Middle struct {
 	activeTab int
 	url       string
 	content   tea.Model
+	call      *app.Call
 }
 
 func New() Middle {
@@ -85,7 +87,7 @@ func (b Middle) Init() tea.Cmd {
 
 func (b Middle) GetContent() tea.Model {
 	if b.activeTab == 3 {
-		return auth.New(b.viewport.Width)
+		return auth.New(b.viewport.Width, b.call)
 	}
 	return nil
 }
@@ -94,8 +96,10 @@ func (b Middle) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	case tabs.TabFocusedMsg:
+		b.call = msg.Tab.Call
 		b.body = msg.Tab.Results
 		b.viewport.SetContent(string(b.body))
+		b.content = b.GetContent()
 
 	case tea.WindowSizeMsg:
 		testStyle.Width(msg.Width - 2)

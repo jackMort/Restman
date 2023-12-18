@@ -16,9 +16,12 @@ import (
 )
 
 type Auth struct {
-	Type     string `json:"type"`
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Type        string `json:"type"`
+	Username    string `json:"username,omitempty"`
+	Password    string `json:"password,omitempty"`
+	Token       string `json:"token,omitempty"`
+	HeaderName  string `json:"header_name,omitempty"`
+	HeaderValue string `json:"header_value,omitempty"`
 }
 
 type Collection struct {
@@ -26,7 +29,7 @@ type Collection struct {
 	Name    string `json:"name"`
 	Calls   []Call `json:"calls"`
 	BaseUrl string `json:"base_url"`
-	Auth    *Auth  `json:"auth"`
+	Auth    *Auth  `json:"auth,omitempty"`
 }
 
 func NewCollection() Collection {
@@ -48,6 +51,7 @@ type Call struct {
 	ID     string `json:"id"`
 	Url    string `json:"url"`
 	Method string `json:"method"`
+	Auth   *Auth  `json:"auth"`
 }
 
 func NewCall() *Call {
@@ -61,8 +65,11 @@ func (i Call) Title() string {
 	switch i.Url {
 	case "h", "ht", "htt", "http", "https", "https:", "http:", "http:/", "https:/", "http://", "https://":
 		return i.Url
+	case "{", "{{", "{{B", "{{BA", "{{BAS", "{{BASE", "{{BASE_", "{{BASE_U", "{{BASE_UR", "{{BASE_URL", "{{BASE_URL}", "{{BASE_URL}}":
+		return i.Url
 	default:
-		url := strings.Split(i.Url, "://")
+		url_processed := strings.Replace(i.Url, "{{BASE_URL}}", "", 1)
+		url := strings.Split(url_processed, "://")
 		if len(url) > 1 && url[1] != "" {
 			return url[1]
 		}
@@ -83,6 +90,22 @@ func (i Call) Collection() *Collection {
 		}
 	}
 	return nil
+}
+
+func (i Call) GetUrl() string {
+	if i.Collection() != nil {
+		return strings.Replace(i.Url, "{{BASE_URL}}", i.Collection().BaseUrl, 1)
+	}
+	return i.Url
+}
+
+func (i Call) GetAuth() *Auth {
+	if i.Auth != nil && i.Auth.Type == "inherit" {
+		if i.Collection() != nil {
+			return i.Collection().Auth
+		}
+	}
+	return i.Auth
 }
 
 func (i Call) MethodShortView() string {
@@ -140,6 +163,51 @@ func (a *App) SetSelectedCall(call *Call) tea.Cmd {
 	}
 }
 
+func (a *App) SetCallAuthType(call *Call, authType string) tea.Cmd {
+	if call.Auth == nil {
+		call.Auth = &Auth{}
+	}
+	call.Auth.Type = authType
+	return a.UpdateCall(call)
+}
+
+func (a *App) SetCallAuthValue(call *Call, key string, value string) tea.Cmd {
+	if call.Auth == nil {
+		call.Auth = &Auth{
+			Type: "inherit",
+		}
+	}
+
+	switch key {
+	case "username":
+		call.Auth.Username = value
+	case "password":
+		call.Auth.Password = value
+	case "token":
+		call.Auth.Token = value
+	case "header_name":
+		call.Auth.HeaderName = value
+	case "header_value":
+		call.Auth.HeaderValue = value
+	}
+
+	return a.UpdateCall(call)
+}
+
+func (a *App) UpdateCall(call *Call) tea.Cmd {
+	for i, collection := range a.Collections {
+		for j, c := range collection.Calls {
+			if c.ID == call.ID {
+				a.Collections[i].Calls[j] = *call
+			}
+		}
+	}
+
+	return tea.Batch(
+		a.SaveCollections(),
+	)
+}
+
 func (a *App) SetFocused(item string) tea.Cmd {
 	return func() tea.Msg {
 		return SetFocusMsg{Item: item}
@@ -155,13 +223,23 @@ func (a *App) GetResponse(call *Call) tea.Cmd {
 		},
 		// fetch response
 		func() tea.Msg {
+
 			params := utils.HTTPRequestParams{
 				Method:  call.Method,
-				URL:     call.Url,
+				URL:     call.GetUrl(),
 				Headers: map[string]string{
 					// "Content-Type": "application/json",
 				},
 			}
+
+			auth := call.GetAuth()
+			if auth != nil {
+				if auth.Type == "basic_auth" {
+					params.Username = auth.Username
+					params.Password = auth.Password
+				}
+			}
+
 			response, err := utils.MakeRequest(params)
 			if err == nil {
 				defer response.Body.Close()
