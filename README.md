@@ -20,7 +20,7 @@ Restman can be installed in several ways, including using pre-built packages fro
 You can download the pre-built packages for Restman from the [Releases](https://github.com/jackMort/Restman/releases) page on the GitHub repository. Choose the appropriate package for your operating system and architecture.
 For example, to download and install Restman on a Unix-like system, you can use the following commands (replace `VERSION` with the actual version you want to install):
 ```bash
-curl -sL https://github.com/jackMort/Restman/releases/download/VERSION/restman_VERSION_Linux_x86_64.tar.gz | tar -xz -C /usr/local/bin
+curl -sL https://github.com/jackMort/Restman/releases/download/VERSION/restman_Linux_x86_64.tar.gz | sudo tar -xzC /usr/local/bin
 ```
 Make sure to add the executable to your PATH if it's not already included.
 
@@ -39,9 +39,9 @@ After installation, you can verify that Restman is installed correctly by runnin
 restman --version
 ```
 This should output the version of Restman that you have installed.
-```
-Make sure to replace `VERSION` with the actual version number and adjust the download URL and file names according to your project's release structure. The instructions should be clear and easy to follow for users who prefer to use pre-built binaries rather than building from source.
-```
+
+> [!NOTE]
+> Make sure to replace `VERSION` with the actual version number and adjust the download URL and file names according to your project's release structure. The instructions should be clear and easy to follow for users who prefer to use pre-built binaries rather than building from source.
 
 ## Usage
 To start using Restman, navigate to your project directory and run:
