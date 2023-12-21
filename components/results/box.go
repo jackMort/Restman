@@ -5,6 +5,7 @@ import (
 	"restman/app"
 	"restman/components/auth"
 	"restman/components/config"
+	"restman/components/headers"
 	"restman/components/params"
 	"restman/components/tabs"
 	"strings"
@@ -66,7 +67,6 @@ type Middle struct {
 	viewport  viewport.Model
 	Tabs      []string
 	activeTab int
-	url       string
 	content   tea.Model
 	call      *app.Call
 }
@@ -74,7 +74,7 @@ type Middle struct {
 func New() Middle {
 	return Middle{
 		title: "Results",
-		Tabs:  []string{"Results", "Params", "Headers", "Auth"},
+		Tabs:  []string{"Results", "Params", "Headers", "Auth", "Data"},
 	}
 }
 
@@ -177,7 +177,7 @@ func (b Middle) View() string {
 		style = style.Border(border)
 		renderedTabs = append(renderedTabs, zone.Mark("tab_"+t, style.Render(t)))
 	}
-	renderedTabs = append(renderedTabs, tabGap.Render(strings.Repeat(" ", b.width-46)))
+	renderedTabs = append(renderedTabs, tabGap.Render(strings.Repeat(" ", b.width-54)))
 
 	windowStyle.Height(b.height - 4)
 
@@ -220,20 +220,33 @@ func (b Middle) View() string {
 		}
 	} else if b.activeTab == 1 {
 		content = emptyMessage.Render("No url params")
+		if b.call != nil {
 
-		u, err := url.Parse(b.url)
-		if err == nil && b.url != "" {
-			m, _ := url.ParseQuery(u.RawQuery)
-			if len(m) > 0 {
+			u, err := url.Parse(b.call.Url)
+			if err == nil && b.call.Url != "" {
+				m, _ := url.ParseQuery(u.RawQuery)
+				if len(m) > 0 {
 
-				table := params.New(m, b.viewport.Width, b.viewport.Height)
-				content = lipgloss.NewStyle().
-					UnsetBold().
-					Render(
-						table.View(),
-					)
+					table := params.New(m, b.viewport.Width, b.viewport.Height)
+					content = lipgloss.NewStyle().
+						UnsetBold().
+						Render(
+							table.View(),
+						)
+				}
 			}
 		}
+	} else if b.activeTab == 2 {
+		h := []string{}
+		if b.call != nil {
+			h = b.call.Headers
+		}
+		table := headers.New(h, b.viewport.Width, b.viewport.Height)
+		content = lipgloss.NewStyle().
+			UnsetBold().
+			Render(
+				table.View(),
+			)
 	} else if b.activeTab == 3 {
 		content = b.content.View()
 	} else {

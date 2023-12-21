@@ -5,6 +5,7 @@ import (
 	"fmt"
 	neturl "net/url"
 	"os"
+	"restman/app"
 	"restman/components/collections"
 	"restman/components/footer"
 	"restman/components/results"
@@ -46,16 +47,36 @@ Restman is a CLI tool for RESTful API.`,
 	},
 
 	Run: func(cmd *cobra.Command, args []string) {
+		call := app.NewCall()
 		if len(args) >= 1 {
-			fmt.Printf("You provided an optional argument: %s\n", args[0])
-		} else {
-			fmt.Println("You did not provide an optional argument.")
+			call.Url = args[0]
 		}
 
+		// TODO: what if both args and flags are provided?
+		curl, _ := cmd.Flags().GetString("url")
+		if curl != "" {
+			call.Url = curl
+		}
+
+		method, _ := cmd.Flags().GetString("request")
+		if method != "" {
+			call.Method = method
+		}
+
+		headers, _ := cmd.Flags().GetStringArray("header")
+		if headers != nil {
+			call.Headers = headers
+		}
+
+		// TODO: add support for data
+		//
+		// data, _ := cmd.Flags().GetString("data")
+
+		// ----
 		zone.NewGlobal()
 
 		// layout-tree defintion
-		m := Model{tui: boxer.Boxer{}, focused: "url"}
+		m := Model{tui: boxer.Boxer{}, focused: "url", initalCall: call}
 
 		url := url.New()
 		middle := results.New()

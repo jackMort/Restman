@@ -48,16 +48,18 @@ func (i Collection) Description() string {
 func (i Collection) FilterValue() string { return i.Name }
 
 type Call struct {
-	ID     string `json:"id"`
-	Url    string `json:"url"`
-	Method string `json:"method"`
-	Auth   *Auth  `json:"auth"`
+	ID      string   `json:"id"`
+	Url     string   `json:"url"`
+	Method  string   `json:"method"`
+	Headers []string `json:"headers"`
+	Auth    *Auth    `json:"auth"`
 }
 
 func NewCall() *Call {
 	return &Call{
 		ID:     uuid.NewString(),
 		Method: "GET",
+    Headers: []string{},
 	}
 }
 

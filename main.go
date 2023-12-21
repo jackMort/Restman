@@ -45,10 +45,12 @@ func stripErr(n boxer.Node, _ error) boxer.Node {
 }
 
 func main() {
+	rootCmd.Flags().StringP("url", "u", "", "Url")
+	rootCmd.Flags().StringP("data", "d", "", "Data")
+	rootCmd.Flags().StringP("request", "X", "GET", "HTTP method")
+	rootCmd.Flags().StringArrayP("header", "H", []string{}, "HTTP header")
 
 	rootCmd.Execute()
-	return
-
 }
 
 type Model struct {
@@ -56,6 +58,7 @@ type Model struct {
 	focused     string
 	popup       tea.Model
 	collections collections.Collections
+	initalCall  *app.Call
 }
 
 func (m Model) Init() tea.Cmd {
@@ -68,7 +71,7 @@ func (m Model) Init() tea.Cmd {
 	m.tui.ModelMap[m.focused], cmd = m.tui.ModelMap[m.focused].Update(config.WindowFocusedMsg{State: true})
 
 	tabs := m.tui.ModelMap["tabs"].(tabs.Tabs)
-	m.tui.ModelMap["tabs"], cmd2 = tabs.AddTab()
+	m.tui.ModelMap["tabs"], cmd2 = tabs.GetOrCreateTab(m.initalCall)
 
 	return tea.Batch(
 		app.GetInstance().ReadCollectionsFromJSON(),
