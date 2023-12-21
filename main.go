@@ -178,7 +178,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			} else if zone.Get("input").InBounds(msg) {
 				m.SetFocused("url")
-
 			} else if zone.Get("send").InBounds(msg) {
 				m.SetFocused("url")
 				url := m.getUrlPane()
@@ -263,7 +262,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		{
-
 			switch msg.String() {
 			case "q", "ctrl+c":
 				width := 100

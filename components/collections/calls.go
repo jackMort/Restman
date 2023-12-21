@@ -33,8 +33,8 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 		style = selectedItemStyle
 	}
 
-  // TODO make some elipsis for long text
-  style = style.MaxWidth(25)
+	// TODO make some elipsis for long text
+	style = style.MaxWidth(25)
 
 	item := style.Render("󰑂 " + method + " " + style.Render(str))
 
@@ -47,7 +47,6 @@ type callModel struct {
 }
 
 func NewCallModel() callModel {
-
 	// Make initial list of items
 	groceryList := list.New([]list.Item{}, itemDelegate{}, 0, 0)
 	groceryList.Styles.Title = titleStyle
@@ -93,7 +92,7 @@ func (m callModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case app.CollectionSelectedMsg:
-    m.collection = msg.Collection
+		m.collection = msg.Collection
 
 		items := []list.Item{}
 		for _, call := range msg.Collection.Calls {

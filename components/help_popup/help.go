@@ -10,14 +10,12 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-var (
-	general = lipgloss.NewStyle().
-		UnsetAlign().
-    Padding(1, 2).
-		Border(lipgloss.RoundedBorder()).
-		Foreground(config.COLOR_FOREGROUND).
-		BorderForeground(config.COLOR_HIGHLIGHT)
-)
+var general = lipgloss.NewStyle().
+	UnsetAlign().
+	Padding(1, 2).
+	Border(lipgloss.RoundedBorder()).
+	Foreground(config.COLOR_FOREGROUND).
+	BorderForeground(config.COLOR_HIGHLIGHT)
 
 type keyMap struct {
 	Up    key.Binding

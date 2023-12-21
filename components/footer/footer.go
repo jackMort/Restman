@@ -120,5 +120,4 @@ func (m model) View() string {
 			),
 		),
 	)
-
 }

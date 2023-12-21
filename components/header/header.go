@@ -66,5 +66,4 @@ func (h Header) View() string {
 			lipgloss.Center, rTitle, strings.Repeat(bg.Render(" "), h.width-wT-wV), rVersion,
 		),
 	)
-
 }

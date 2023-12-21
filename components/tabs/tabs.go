@@ -94,7 +94,6 @@ func (m Tabs) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			var obj interface{}
 			json.Unmarshal([]byte(msg.Body), &obj)
 			if obj == nil {
-
 				m.tabs[index].Results = msg.Body
 			} else {
 				s, _ := f.Marshal(obj)
@@ -111,7 +110,6 @@ func (m Tabs) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			for i := range m.tabs {
 				if zone.Get(utils.Join("tab-", i)).InBounds(msg) {
 					return m.setFocused(i)
-
 				}
 			}
 

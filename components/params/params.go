@@ -16,12 +16,10 @@ const (
 	columnKeyValue = "value"
 )
 
-var (
-	styleBase = lipgloss.NewStyle().
-		Foreground(config.COLOR_FOREGROUND).
-		Bold(false).
-		BorderForeground(config.COLOR_SUBTLE)
-)
+var styleBase = lipgloss.NewStyle().
+	Foreground(config.COLOR_FOREGROUND).
+	Bold(false).
+	BorderForeground(config.COLOR_SUBTLE)
 
 type Model struct {
 	width       int

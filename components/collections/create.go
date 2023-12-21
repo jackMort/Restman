@@ -146,7 +146,7 @@ func (c Create) View() string {
 		c.inputs[TITLE_IDX].View(),
 		" ",
 
-    inputStyle.Width(30).Render("Base URL:"),
+		inputStyle.Width(30).Render("Base URL:"),
 		c.inputs[BASE_URL_IDX].View(),
 		" ",
 		" ",

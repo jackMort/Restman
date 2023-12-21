@@ -60,7 +60,7 @@ var MethodStyle = lipgloss.NewStyle().
 	Bold(true).
 	Foreground(COLOR_FOREGROUND).
 	Background(COLOR_HIGHLIGHT).
-  Padding(0, 1)
+	Padding(0, 1)
 
 var Methods = map[string]string{
 	"GET":    MethodStyle.Copy().Background(lipgloss.Color(methodColors["GET"])).Render("GET"),

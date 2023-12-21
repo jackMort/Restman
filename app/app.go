@@ -34,7 +34,8 @@ type Collection struct {
 
 func NewCollection() Collection {
 	return Collection{
-		ID: uuid.NewString(),
+		ID:    uuid.NewString(),
+		Calls: []Call{},
 	}
 }
 
@@ -57,9 +58,9 @@ type Call struct {
 
 func NewCall() *Call {
 	return &Call{
-		ID:     uuid.NewString(),
-		Method: "GET",
-    Headers: []string{},
+		ID:      uuid.NewString(),
+		Method:  "GET",
+		Headers: []string{},
 	}
 }
 
@@ -67,7 +68,18 @@ func (i Call) Title() string {
 	switch i.Url {
 	case "h", "ht", "htt", "http", "https", "https:", "http:", "http:/", "https:/", "http://", "https://":
 		return i.Url
-	case "{", "{{", "{{B", "{{BA", "{{BAS", "{{BASE", "{{BASE_", "{{BASE_U", "{{BASE_UR", "{{BASE_URL", "{{BASE_URL}", "{{BASE_URL}}":
+	case "{",
+		"{{",
+		"{{B",
+		"{{BA",
+		"{{BAS",
+		"{{BASE",
+		"{{BASE_",
+		"{{BASE_U",
+		"{{BASE_UR",
+		"{{BASE_URL",
+		"{{BASE_URL}",
+		"{{BASE_URL}}":
 		return i.Url
 	default:
 		url_processed := strings.Replace(i.Url, "{{BASE_URL}}", "", 1)
@@ -221,11 +233,9 @@ func (a *App) GetResponse(call *Call) tea.Cmd {
 		// set loading
 		func() tea.Msg {
 			return OnLoadingMsg{Call: call}
-
 		},
 		// fetch response
 		func() tea.Msg {
-
 			params := utils.HTTPRequestParams{
 				Method:  call.Method,
 				URL:     call.GetUrl(),

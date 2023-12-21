@@ -14,12 +14,10 @@ const (
 	columnKeyValue = "value"
 )
 
-var (
-	styleBase = lipgloss.NewStyle().
-		Foreground(config.COLOR_FOREGROUND).
-		Bold(false).
-		BorderForeground(config.COLOR_SUBTLE)
-)
+var styleBase = lipgloss.NewStyle().
+	Foreground(config.COLOR_FOREGROUND).
+	Bold(false).
+	BorderForeground(config.COLOR_SUBTLE)
 
 type Model struct {
 	width       int
@@ -44,7 +42,7 @@ func New(headers []string, width int, height int) Model {
 		height: height,
 		simpleTable: table.New([]table.Column{
 			table.NewColumn(columnKeyKey, " Key", 20),
-			table.NewColumn(columnKeyValue, " Value", width - 23),
+			table.NewColumn(columnKeyValue, " Value", width-23),
 		}).WithRows(rows).BorderRounded().
 			WithBaseStyle(styleBase).
 			Focused(true),

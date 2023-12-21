@@ -19,9 +19,7 @@ import (
 	boxer "github.com/treilik/bubbleboxer"
 )
 
-var (
-	version = "dev"
-)
+var version = "dev"
 
 var rootCmd = &cobra.Command{
 	Use:   "restman [http://example.com/api/v1]",

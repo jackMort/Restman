@@ -11,7 +11,7 @@ type Tab struct {
 func NewTab() Tab {
 	return Tab{
 		Name: "untitled",
-    Call: app.NewCall(),
+		Call: app.NewCall(),
 	}
 }
 

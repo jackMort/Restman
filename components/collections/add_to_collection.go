@@ -106,7 +106,7 @@ func (c AddToCollection) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			} else if c.focused == 2 {
 				c.save = true
 				return c, c.makeChoice()
-			} 
+			}
 		case tea.KeyCtrlC, tea.KeyEsc:
 			return c, c.makeChoice()
 		case tea.KeyShiftTab, tea.KeyCtrlK:

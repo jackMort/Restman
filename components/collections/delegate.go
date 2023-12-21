@@ -12,7 +12,6 @@ func newItemDelegate(keys *delegateKeyMap) list.DefaultDelegate {
 	d := list.NewDefaultDelegate()
 
 	d.UpdateFunc = func(msg tea.Msg, m *list.Model) tea.Cmd {
-
 		i, _ := m.SelectedItem().(app.Collection)
 
 		switch msg := msg.(type) {
