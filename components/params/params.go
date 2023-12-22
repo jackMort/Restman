@@ -3,6 +3,7 @@ package params
 import (
 	"net/url"
 	"restman/components/config"
+	"sort"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -11,7 +12,6 @@ import (
 )
 
 const (
-	columnKeyIcon  = "icon"
 	columnKeyKey   = "key"
 	columnKeyValue = "value"
 )
@@ -30,12 +30,18 @@ type Model struct {
 func New(items url.Values, width int, height int) Model {
 	colWidth := (width - 4) / 2
 
+	// sort items
+	keys := make([]string, 0, len(items))
+	for k := range items {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
 	rows := make([]table.Row, 0, len(items))
-	for key, values := range items {
+	for _, key := range keys {
 		row := table.NewRow(table.RowData{
 			columnKeyKey:   " " + key,
-			columnKeyValue: " " + strings.Join(values, ", "),
-			columnKeyIcon:  "",
+			columnKeyValue: " " + strings.Join(items[key], ", "),
 		})
 		rows = append(rows, row)
 	}
@@ -44,7 +50,6 @@ func New(items url.Values, width int, height int) Model {
 		width:  width,
 		height: height,
 		simpleTable: table.New([]table.Column{
-			table.NewColumn(columnKeyIcon, "", 1),
 			table.NewColumn(columnKeyKey, " Key", colWidth),
 			table.NewColumn(columnKeyValue, " Value", colWidth),
 		}).WithRows(rows).BorderRounded().

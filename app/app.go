@@ -85,10 +85,10 @@ func (i Call) Title() string {
 		url_processed := strings.Replace(i.Url, "{{BASE_URL}}", "", 1)
 		url := strings.Split(url_processed, "://")
 		if len(url) > 1 && url[1] != "" {
-			return url[1]
+			return utils.Truncate(url[1], 25)
 		}
 		if url[0] != "" && url[0] != "http" && url[0] != "https" {
-			return url[0]
+			return utils.Truncate(url[0], 25)
 		}
 	}
 	return "untitled"
