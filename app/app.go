@@ -54,6 +54,7 @@ type Call struct {
 	Method  string   `json:"method"`
 	Headers []string `json:"headers"`
 	Auth    *Auth    `json:"auth"`
+	Data    string   `json:"data"`
 }
 
 func NewCall() *Call {
@@ -242,6 +243,10 @@ func (a *App) GetResponse(call *Call) tea.Cmd {
 				Headers: map[string]string{
 					// "Content-Type": "application/json",
 				},
+			}
+
+			if call.Data != "" {
+				params.Body = strings.NewReader(call.Data)
 			}
 
 			auth := call.GetAuth()

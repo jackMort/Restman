@@ -62,6 +62,9 @@ Restman is a CLI tool for RESTful API.`,
 			call.Method = method
 		}
 
+		data, _ := cmd.Flags().GetString("data")
+		call.Data = data
+
 		headers, _ := cmd.Flags().GetStringArray("header")
 		if headers != nil {
 			call.Headers = headers
@@ -84,10 +87,6 @@ Restman is a CLI tool for RESTful API.`,
 		for k, v := range default_headers {
 			call.Headers = append(call.Headers, fmt.Sprintf("%s: %s", k, v))
 		}
-
-		// TODO: add support for data
-		//
-		// data, _ := cmd.Flags().GetString("data")
 
 		// ----
 		zone.NewGlobal()

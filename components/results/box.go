@@ -87,7 +87,13 @@ func (b Middle) Init() tea.Cmd {
 
 func (b Middle) GetContent() tea.Model {
 	if b.activeTab == 3 {
-		return auth.New(b.viewport.Width, b.call)
+		return auth.New(b.width, b.call)
+	} else if b.activeTab == 4 {
+		body := ""
+		if b.call != nil {
+			body = b.call.Data
+		}
+		return NewData(body, b.width-2, b.height-4)
 	}
 	return nil
 }
@@ -248,6 +254,8 @@ func (b Middle) View() string {
 				table.View(),
 			)
 	} else if b.activeTab == 3 {
+		content = b.content.View()
+	} else if b.activeTab == 4 {
 		content = b.content.View()
 	} else {
 		content = emptyMessage.Render("Not implemented yet")

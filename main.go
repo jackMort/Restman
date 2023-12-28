@@ -234,6 +234,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				middle.SetActiveTab(3)
 				m.tui.ModelMap["middle"] = middle
 
+			} else if zone.Get("tab_Data").InBounds(msg) {
+				m.SetFocused("middle")
+				middle := m.getMiddlePane()
+				middle.SetActiveTab(4)
+				m.tui.ModelMap["middle"] = middle
+
 			} else if zone.Get("collections_minify").InBounds(msg) {
 				m.tui.ModelMap["collections"], cmd = m.tui.ModelMap["collections"].(collections.Collections).SetMinified(true)
 				m.tui.UpdateSize(tea.WindowSizeMsg{Width: m.tui.LayoutTree.GetWidth(), Height: m.tui.LayoutTree.GetHeight()})
@@ -263,7 +269,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		{
 			switch msg.String() {
-			case "q", "ctrl+c":
+			case "ctrl+c":
 				width := 100
 				m.popup = popup.NewChoice(m.View(), width, "Are you sure, you want to quit?", false)
 				return m, m.popup.Init()
