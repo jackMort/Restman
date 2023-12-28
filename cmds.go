@@ -15,6 +15,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	zone "github.com/lrstanley/bubblezone"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	boxer "github.com/treilik/bubbleboxer"
 )
@@ -64,6 +65,24 @@ Restman is a CLI tool for RESTful API.`,
 		headers, _ := cmd.Flags().GetStringArray("header")
 		if headers != nil {
 			call.Headers = headers
+		}
+
+		viper.SetConfigName("config")         // name of config file (without extension)
+		viper.SetConfigType("json")           // REQUIRED if the config file does not have the extension in the name
+		viper.AddConfigPath("/etc/restman/")  // path to look for the config file in
+		viper.AddConfigPath("$HOME/.restman") // call multiple times to add many search paths
+		err := viper.ReadInConfig()           // Find and read the config file
+		if err != nil {                       // Handle errors reading the config file
+			if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+				// NOTE: ignore if config file is not found
+			} else {
+				panic(fmt.Errorf("fatal error config file: %w", err))
+			}
+		}
+
+		var default_headers map[string]string = viper.GetStringMapString("default_headers")
+		for k, v := range default_headers {
+			call.Headers = append(call.Headers, fmt.Sprintf("%s: %s", k, v))
 		}
 
 		// TODO: add support for data
