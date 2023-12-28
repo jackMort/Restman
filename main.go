@@ -59,6 +59,8 @@ type Model struct {
 	popup       tea.Model
 	collections collections.Collections
 	initalCall  *app.Call
+	width       int
+	height      int
 }
 
 func (m Model) Init() tea.Cmd {
@@ -269,7 +271,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		{
 			switch msg.String() {
+			case "q":
+				if m.SizeIsTooSmall() {
+					return m, tea.Quit
+				}
+
 			case "ctrl+c":
+				if m.SizeIsTooSmall() {
+					return m, tea.Quit
+				}
+
 				width := 100
 				m.popup = popup.NewChoice(m.View(), width, "Are you sure, you want to quit?", false)
 				return m, m.popup.Init()
@@ -317,6 +328,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
 		m.tui.UpdateSize(msg)
 
 	default:
@@ -331,7 +344,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+func (m Model) SizeIsTooSmall() bool {
+	return m.width < 60 || m.height < 20
+}
+
 func (m Model) View() string {
+	if m.SizeIsTooSmall() {
+		return config.FullscreenStyle.
+			Width(m.width - 2).
+			Height(m.height - 2).
+			Render("Please resize the window to at least 60x20")
+	}
+
 	if m.popup != nil {
 		return m.popup.View()
 	}

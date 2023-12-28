@@ -62,6 +62,13 @@ var MethodStyle = lipgloss.NewStyle().
 	Background(COLOR_HIGHLIGHT).
 	Padding(0, 1)
 
+var FullscreenStyle = lipgloss.NewStyle().
+	Border(lipgloss.NormalBorder()).
+	BorderForeground(COLOR_HIGHLIGHT).
+	Align(lipgloss.Center).
+	AlignVertical(lipgloss.Center).
+	Padding(1)
+
 var Methods = map[string]string{
 	"GET":    MethodStyle.Copy().Background(lipgloss.Color(methodColors["GET"])).Render("GET"),
 	"POST":   MethodStyle.Copy().Background(lipgloss.Color(methodColors["POST"])).Render("POST"),

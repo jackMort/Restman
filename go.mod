@@ -14,6 +14,7 @@ require (
 	github.com/lrstanley/bubblezone v0.0.0-20230911164824-e3824f1adde9
 	github.com/muesli/ansi v0.0.0-20230316100256-276c6243b2f6
 	github.com/spf13/cobra v1.8.0
+	github.com/spf13/viper v1.18.2
 	github.com/treilik/bubbleboxer v0.2.0
 )
 
@@ -45,7 +46,6 @@ require (
 	github.com/spf13/afero v1.11.0 // indirect
 	github.com/spf13/cast v1.6.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/spf13/viper v1.18.2 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
