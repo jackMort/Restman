@@ -62,6 +62,11 @@ For a list of commands and options, use the help command:
 restman --help
 ```
 
+Once Restman is running, you'll be greeted with the TUI where you can configure your requests and view responses.
+The interface is designed to be intuitive and easy to navigate. Below is a preview of the TUI with the available keyboard shortcuts:
+
+![preview help image](https://github.com/jackMort/Restman/blob/media/help.png?raw=true)
+
 ## Features
 - Intuitive Text-based User Interface (TUI)
 - Support for various HTTP methods (GET, POST, PUT, DELETE, etc.)
