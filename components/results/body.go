@@ -9,12 +9,20 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+const (
+	NONE = "None"
+	TEXT = "Text"
+)
+
+var OPTIONS = []string{NONE, TEXT}
+
 type BodyModel struct {
-	Body     string
-	width    int
-	height   int
-	textarea textarea.Model
-	toggle   components.ToggleModel
+	Body      string
+	width     int
+	height    int
+	textarea  textarea.Model
+	toggle    components.ToggleModel
+	body_type string
 }
 
 func NewBody(body string, width int, height int) BodyModel {
@@ -22,6 +30,7 @@ func NewBody(body string, width int, height int) BodyModel {
 	focusedStyle, blurredStyle := textarea.DefaultStyles()
 	focusedStyle.Base = lipgloss.
 		NewStyle().
+		MarginTop(1).
 		Border(lipgloss.NormalBorder()).
 		BorderForeground(config.COLOR_SUBTLE).
 		BorderRight(false).
@@ -37,18 +46,20 @@ func NewBody(body string, width int, height int) BodyModel {
 	ti.FocusedStyle = focusedStyle
 	ti.BlurredStyle = blurredStyle
 
-	default_value := "None"
+	// TODO: change logic to add param body_type to Call
+	default_value := NONE
 	if body != "" {
-		default_value = "Text"
+		default_value = TEXT
 	}
-	toggle := components.NewToggle("Body type", []string{"None", "Text"}, default_value)
+	toggle := components.NewToggle("Body type", OPTIONS, default_value)
 
 	return BodyModel{
-		width:    width,
-		height:   height,
-		Body:     body,
-		textarea: ti,
-		toggle:   toggle,
+		width:     width,
+		height:    height,
+		Body:      body,
+		textarea:  ti,
+		toggle:    toggle,
+		body_type: default_value,
 	}
 }
 
@@ -61,6 +72,10 @@ func (m BodyModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
+	case components.OptionSelectedMsg:
+		if msg.Id == m.toggle.Id {
+			m.body_type = msg.Selected
+		}
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyEsc:
@@ -86,6 +101,11 @@ func (m BodyModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m BodyModel) View() string {
+	content := m.textarea.View()
+	if m.body_type == NONE {
+		content = config.EmptyMessageStyle.Render("No body")
+	}
+
 	return lipgloss.
 		NewStyle().
 		Padding(1, 2).
@@ -93,8 +113,7 @@ func (m BodyModel) View() string {
 			lipgloss.JoinVertical(
 				lipgloss.Left,
 				m.toggle.View(),
-				"",
-				m.textarea.View(),
+				content,
 			),
 		)
 }
