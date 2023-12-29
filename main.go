@@ -353,7 +353,12 @@ func (m Model) View() string {
 		return config.FullscreenStyle.
 			Width(m.width - 2).
 			Height(m.height - 2).
-			Render("Please resize the window to at least 60x20")
+			Render(
+				lipgloss.JoinVertical(
+					lipgloss.Left,
+					config.BoxHeader.Render("Restman "+version),
+					"Please resize the window to at least 60x20"),
+			)
 	}
 
 	if m.popup != nil {

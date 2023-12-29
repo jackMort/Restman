@@ -5,8 +5,6 @@ import (
 )
 
 var (
-	VERSION = "v0.0.1"
-
 	// App Colors
 	COLOR_SUBTLE     = lipgloss.AdaptiveColor{Light: "#D9DCCF", Dark: "#383838"}
 	COLOR_HIGHLIGHT  = lipgloss.AdaptiveColor{Light: "#874BFD", Dark: "#7D56F4"}
