@@ -345,7 +345,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) SizeIsTooSmall() bool {
-	return m.width < 60 || m.height < 20
+	return m.width < 60 || m.height < 30
 }
 
 func (m Model) View() string {
