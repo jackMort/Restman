@@ -74,7 +74,7 @@ type Middle struct {
 func New() Middle {
 	return Middle{
 		title: "Results",
-		Tabs:  []string{"Results", "Params", "Headers", "Auth", "Data"},
+		Tabs:  []string{"Results", "Params", "Headers", "Auth", "Body"},
 	}
 }
 
@@ -93,7 +93,7 @@ func (b Middle) GetContent() tea.Model {
 		if b.call != nil {
 			body = b.call.Data
 		}
-		return NewData(body, b.width-2, b.height-4)
+		return NewBody(body, b.width-2, b.height-4)
 	}
 	return nil
 }
@@ -114,6 +114,7 @@ func (b Middle) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		testStyleFocused.Height(msg.Height - 2)
 		b.width = msg.Width
 		b.height = msg.Height
+		b.content = b.GetContent()
 
 	case tea.KeyMsg:
 		switch msg.String() {

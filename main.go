@@ -236,7 +236,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				middle.SetActiveTab(3)
 				m.tui.ModelMap["middle"] = middle
 
-			} else if zone.Get("tab_Data").InBounds(msg) {
+			} else if zone.Get("tab_Body").InBounds(msg) {
 				m.SetFocused("middle")
 				middle := m.getMiddlePane()
 				middle.SetActiveTab(4)
