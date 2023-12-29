@@ -5,7 +5,6 @@ import (
 	"restman/app"
 	"restman/components/collections"
 	"restman/components/config"
-	help "restman/components/help_popup"
 	"restman/components/popup"
 	"restman/components/results"
 	"restman/components/tabs"
@@ -289,8 +288,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.popup = collections.NewCreate(m.View(), utils.MinInt(70, 100))
 				return m, m.popup.Init()
 
-			case "?":
-				m.popup = help.NewHelp(m.View(), 70)
+			case "ctrl+h":
+				m.popup = NewHelp(m.View(), 70)
 				return m, m.popup.Init()
 
 			case "ctrl+s":
