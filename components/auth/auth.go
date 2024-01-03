@@ -108,7 +108,20 @@ func (c Model) Init() tea.Cmd {
 
 // nextInput focuses the next input field
 func (c *Model) nextInput() {
-	c.focused = (c.focused + 1) % len(c.inputs)
+	switch c.method {
+	case INHERIT:
+		c.focused = 0
+	case BASIC_AUTH:
+		c.focused = (c.focused + 1) % 2
+	case BEARER_TOKEN:
+		c.focused = TOKEN_IDX
+	case API_KEY:
+		if c.focused == API_KEY_IDX {
+			c.focused = API_VALUE_IDX
+		} else {
+			c.focused = API_KEY_IDX
+		}
+	}
 }
 
 // prevInput focuses the previous input field
@@ -124,6 +137,7 @@ func (c *Model) nextMethod() tea.Cmd {
 	switch c.method {
 	case INHERIT:
 		c.method = NONE
+		c.focused = 0
 	case NONE:
 		c.method = BASIC_AUTH
 		c.focused = USERNAME_IDX
@@ -135,6 +149,7 @@ func (c *Model) nextMethod() tea.Cmd {
 		c.focused = API_KEY_IDX
 	case API_KEY:
 		c.method = INHERIT
+		c.focused = 0
 	}
 	return app.GetInstance().SetCallAuthType(c.call, c.method)
 }
@@ -162,7 +177,7 @@ func (c Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.MouseMsg:
 		if msg.Type == tea.MouseLeft {
 			if zone.Get("auth_method").InBounds(msg) {
-				return c, c.nextMethod()
+				c.nextMethod()
 			}
 		}
 	}
@@ -195,11 +210,12 @@ func (c Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			)
 
 		}
-		for i := range c.inputs {
-			c.inputs[i].Blur()
-		}
-		c.inputs[c.focused].Focus()
 	}
+
+	for i := range c.inputs {
+		c.inputs[i].Blur()
+	}
+	c.inputs[c.focused].Focus()
 
 	for i := range c.inputs {
 		c.inputs[i], cmds[i] = c.inputs[i].Update(msg)
