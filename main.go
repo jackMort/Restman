@@ -6,7 +6,7 @@ import (
 	"restman/components/collections"
 	"restman/components/config"
 	"restman/components/popup"
-	"restman/components/results"
+	"restman/components/request"
 	"restman/components/tabs"
 	"restman/components/url"
 	"restman/utils"
@@ -17,7 +17,7 @@ import (
 	boxer "github.com/treilik/bubbleboxer"
 )
 
-var windows = []string{"collections", "url", "middle"}
+var windows = []string{"collections", "url", "request", "results"}
 
 var (
 	testStyle = lipgloss.NewStyle().
@@ -97,7 +97,9 @@ func (m *Model) Next() (tea.Model, tea.Cmd) {
 	case "collections":
 		m.focused = "url"
 	case "url":
-		m.focused = "middle"
+		m.focused = "request"
+	case "request":
+		m.focused = "results"
 	default:
 		if coll.IsMinified() {
 			m.focused = "url"
@@ -139,8 +141,8 @@ func (m Model) getUrlPane() *url.Url {
 	return &url
 }
 
-func (m Model) getMiddlePane() *results.Middle {
-	middle := m.tui.ModelMap["middle"].(results.Middle)
+func (m Model) getRequestPane() *request.Request {
+	middle := m.tui.ModelMap["request"].(request.Request)
 	return &middle
 }
 
@@ -212,34 +214,30 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m.SetFocused("collections")
 
 			} else if zone.Get("tab_Results").InBounds(msg) {
-				m.SetFocused("middle")
-				middle := m.getMiddlePane()
-				middle.SetActiveTab(0)
-				m.tui.ModelMap["middle"] = middle
-
+				m.SetFocused("results")
 			} else if zone.Get("tab_Params").InBounds(msg) {
-				m.SetFocused("middle")
-				middle := m.getMiddlePane()
-				middle.SetActiveTab(1)
-				m.tui.ModelMap["middle"] = middle
+				m.SetFocused("request")
+				request := m.getRequestPane()
+				request.SetActiveTab(0)
+				m.tui.ModelMap["request"] = request
 
 			} else if zone.Get("tab_Headers").InBounds(msg) {
-				m.SetFocused("middle")
-				middle := m.getMiddlePane()
-				middle.SetActiveTab(2)
-				m.tui.ModelMap["middle"] = middle
+				m.SetFocused("request")
+				request := m.getRequestPane()
+				request.SetActiveTab(1)
+				m.tui.ModelMap["request"] = request
 
 			} else if zone.Get("tab_Auth").InBounds(msg) {
-				m.SetFocused("middle")
-				middle := m.getMiddlePane()
-				middle.SetActiveTab(3)
-				m.tui.ModelMap["middle"] = middle
+				m.SetFocused("request")
+				request := m.getRequestPane()
+				request.SetActiveTab(2)
+				m.tui.ModelMap["request"] = request
 
 			} else if zone.Get("tab_Body").InBounds(msg) {
-				m.SetFocused("middle")
-				middle := m.getMiddlePane()
-				middle.SetActiveTab(4)
-				m.tui.ModelMap["middle"] = middle
+				m.SetFocused("request")
+				request := m.getRequestPane()
+				request.SetActiveTab(3)
+				m.tui.ModelMap["request"] = request
 
 			} else if zone.Get("collections_minify").InBounds(msg) {
 				m.tui.ModelMap["collections"], cmd = m.tui.ModelMap["collections"].(collections.Collections).SetMinified(true)

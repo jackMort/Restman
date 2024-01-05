@@ -1,12 +1,15 @@
-package results
+package request
 
 import (
+	"net/url"
 	"restman/app"
+	"restman/components/auth"
 	"restman/components/config"
+	"restman/components/headers"
+	"restman/components/params"
 	"restman/components/tabs"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	zone "github.com/lrstanley/bubblezone"
@@ -54,40 +57,51 @@ var (
 			Render
 )
 
-type Results struct {
+type Request struct {
 	title     string
 	focused   bool
 	body      string
 	width     int
 	height    int
-	viewport  viewport.Model
 	Tabs      []string
 	activeTab int
 	content   tea.Model
 	call      *app.Call
 }
 
-func New() Results {
-	return Results{
-		title: "Results",
-		Tabs:  []string{"Results"},
+func New() Request {
+	return Request{
+		title: "Params",
+		Tabs:  []string{"Params", "Headers", "Auth", "Body"},
 	}
 }
 
 // satisfy the tea.Model interface
-func (b Results) Init() tea.Cmd {
-	b.viewport = viewport.New(10, 10)
+func (b Request) Init() tea.Cmd {
 	b.activeTab = 0
 	return nil
 }
 
-func (b Results) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (b Request) GetContent() tea.Model {
+	if b.activeTab == 2 {
+		return auth.New(b.width, b.call)
+	} else if b.activeTab == 3 {
+		body := ""
+		if b.call != nil {
+			body = b.call.Data
+		}
+		return NewBody(body, b.width-2, b.height-4)
+	}
+	return nil
+}
+
+func (b Request) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	case tabs.TabFocusedMsg:
 		b.call = msg.Tab.Call
 		b.body = msg.Tab.Results
-		b.viewport.SetContent(string(b.body))
+		b.content = b.GetContent()
 
 	case tea.WindowSizeMsg:
 		testStyle.Width(msg.Width - 2)
@@ -96,14 +110,17 @@ func (b Results) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		testStyleFocused.Height(msg.Height - 2)
 		b.width = msg.Width
 		b.height = msg.Height
+		b.content = b.GetContent()
 
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+l":
 			b.activeTab = min(b.activeTab+1, len(b.Tabs)-1)
+			b.content = b.GetContent()
 
 		case "ctrl+h":
 			b.activeTab = max(b.activeTab-1, 0)
+			b.content = b.GetContent()
 		}
 
 	case config.WindowFocusedMsg:
@@ -112,7 +129,6 @@ func (b Results) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
-	b.viewport, cmd = b.viewport.Update(msg)
 	cmds = append(cmds, cmd)
 
 	if b.content != nil {
@@ -123,11 +139,12 @@ func (b Results) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return b, tea.Batch(cmds...)
 }
 
-func (b *Results) SetActiveTab(tab int) {
+func (b *Request) SetActiveTab(tab int) {
 	b.activeTab = tab
+	b.content = b.GetContent()
 }
 
-func (b Results) View() string {
+func (b Request) View() string {
 	doc := strings.Builder{}
 
 	var renderedTabs []string
@@ -162,7 +179,7 @@ func (b Results) View() string {
 		style = style.Border(border)
 		renderedTabs = append(renderedTabs, zone.Mark("tab_"+t, style.Render(t)))
 	}
-	renderedTabs = append(renderedTabs, tabGap.Render(strings.Repeat(" ", b.width-17)))
+	renderedTabs = append(renderedTabs, tabGap.Render(strings.Repeat(" ", b.width-43)))
 
 	windowStyle.Height(b.height - 4)
 
@@ -176,34 +193,44 @@ func (b Results) View() string {
 	doc.WriteString(row)
 	doc.WriteString("\n")
 
-	b.viewport.Width = b.width - 2
-	b.viewport.Height = b.height - 5
-
 	var content string
 	if b.activeTab == 0 {
-		if b.body != "" {
-			content = b.viewport.View()
-		} else {
-			icon := `
-   ____
-  /\___\
- /\ \___\
- \ \/ / /
-  \/_/_/
-`
+		content = emptyMessage.Render("No url params")
+		if b.call != nil {
 
-			message := lipgloss.JoinVertical(
-				lipgloss.Center,
-				lipgloss.NewStyle().Foreground(config.COLOR_HIGHLIGHT).Render(icon),
-				"Not sent yet")
+			u, err := url.Parse(b.call.Url)
+			if err == nil && b.call.Url != "" {
+				m, _ := url.ParseQuery(u.RawQuery)
+				if len(m) > 0 {
 
-			center := lipgloss.PlaceHorizontal(b.viewport.Width, lipgloss.Center, message)
-			content = lipgloss.NewStyle().
-				Foreground(config.COLOR_GRAY).
-				Bold(true).
-				Render(lipgloss.PlaceVertical(b.viewport.Height, lipgloss.Center, center))
+					table := params.New(m, b.width, b.height)
+					content = lipgloss.NewStyle().
+						UnsetBold().
+						Render(
+							table.View(),
+						)
+				}
+			}
 		}
+	} else if b.activeTab == 1 {
+		h := []string{}
+		if b.call != nil {
+			h = b.call.Headers
+		}
+		table := headers.New(h, b.width-2, b.width)
+		content = lipgloss.NewStyle().
+			UnsetBold().
+			Render(
+				table.View(),
+			)
+	} else if b.activeTab == 2 {
+		content = b.content.View()
+	} else if b.activeTab == 3 {
+		content = b.content.View()
+	} else {
+		content = emptyMessage.Render("Not implemented yet")
 	}
+
 	doc.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(content))
 	return docStyle.Render(doc.String())
 }

@@ -8,6 +8,7 @@ import (
 	"restman/app"
 	"restman/components/collections"
 	"restman/components/footer"
+	"restman/components/request"
 	"restman/components/results"
 	"restman/components/tabs"
 	"restman/components/url"
@@ -95,7 +96,8 @@ Restman is a CLI tool for RESTful API.`,
 		m := Model{tui: boxer.Boxer{}, focused: "url", initalCall: call}
 
 		url := url.New()
-		middle := results.New()
+		resultsBox := results.New()
+		requestBox := request.New()
 		footerBox := footer.New()
 		colBox := collections.New()
 		tabs := tabs.New()
@@ -103,16 +105,22 @@ Restman is a CLI tool for RESTful API.`,
 		centerNode := boxer.CreateNoBorderNode()
 		centerNode.VerticalStacked = true
 		centerNode.SizeFunc = func(node boxer.Node, widthOrHeight int) []int {
+			size := widthOrHeight - 5
+			paramsSize := int(float64(size) * 0.4)
+			resultsSize := size - paramsSize
+
 			return []int{
 				2,
 				3,
-				widthOrHeight - 5,
+				paramsSize,
+				resultsSize,
 			}
 		}
 		centerNode.Children = []boxer.Node{
 			stripErr(m.tui.CreateLeaf("tabs", tabs)),
 			stripErr(m.tui.CreateLeaf("url", url)),
-			stripErr(m.tui.CreateLeaf("middle", middle)),
+			stripErr(m.tui.CreateLeaf("request", requestBox)),
+			stripErr(m.tui.CreateLeaf("results", resultsBox)),
 		}
 
 		// middle Node
