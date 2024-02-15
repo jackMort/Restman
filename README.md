@@ -3,6 +3,10 @@
 ![GO](https://img.shields.io/badge/Made%20with%20GO-white.svg?style=for-the-badge&logo=go)
 
 `Restman` is a command-line tool for interacting with RESTful APIs, featuring a TUI (Text-based User Interface). It's designed for developers who prefer to work within the terminal environment, offering a convenient and efficient way to test and debug APIs.
+
+> [!NOTE]
+> Restman is currently in active development and is not yet ready for production use.
+
 ![preview image](https://github.com/jackMort/Restman/blob/media/preview.png?raw=true)
 
 ## Table of Contents
