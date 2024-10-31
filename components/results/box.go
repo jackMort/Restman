@@ -70,7 +70,7 @@ type Results struct {
 func New() Results {
 	return Results{
 		title: "Results",
-		Tabs:  []string{"Results"},
+		Tabs:  []string{"Response", "Headers", "Cookies", "Statistics"},
 	}
 }
 
@@ -90,10 +90,8 @@ func (b Results) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		b.viewport.SetContent(string(b.body))
 
 	case tea.WindowSizeMsg:
-		testStyle.Width(msg.Width - 2)
-		testStyle.Height(msg.Height - 2)
-		testStyleFocused.Width(msg.Width - 2)
-		testStyleFocused.Height(msg.Height - 2)
+		testStyle = testStyle.Width(msg.Width - 2).Height(msg.Height - 2)
+		testStyleFocused = testStyleFocused.Width(msg.Width - 2).Height(msg.Height - 2)
 		b.width = msg.Width
 		b.height = msg.Height
 
@@ -162,9 +160,9 @@ func (b Results) View() string {
 		style = style.Border(border)
 		renderedTabs = append(renderedTabs, zone.Mark("tab_"+t, style.Render(t)))
 	}
-	renderedTabs = append(renderedTabs, tabGap.Render(strings.Repeat(" ", b.width-17)))
+	renderedTabs = append(renderedTabs, tabGap.Render(strings.Repeat(" ", b.width-54)))
 
-	windowStyle.Height(b.height - 4)
+	windowStyle.Height(b.height - 2)
 
 	style := inactiveTabStyle.Copy()
 	border, _, _, _, _ := style.GetBorder()
@@ -177,7 +175,7 @@ func (b Results) View() string {
 	doc.WriteString("\n")
 
 	b.viewport.Width = b.width - 2
-	b.viewport.Height = b.height - 5
+	b.viewport.Height = b.height - 4
 
 	var content string
 	if b.activeTab == 0 {

@@ -48,6 +48,8 @@ type Collections struct {
 	smod       callModel
 	state      app.App
 	collection *app.Collection
+	width      int
+	height     int
 }
 
 func New() Collections {
@@ -78,12 +80,8 @@ func (m Collections) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.focused = msg.State
 
 	case tea.WindowSizeMsg:
-		normal.Width(msg.Width - 3)
-		normal.Height(msg.Height - 2)
-		focused.Width(msg.Width - 3)
-		focused.Height(msg.Height - 2)
-		minified.Width(msg.Width - 2)
-		minified.Height(msg.Height - 2)
+		m.width = msg.Width
+		m.height = msg.Height
 
 		newSModel, cmd2 := m.smod.Update(msg)
 		m.smod = newSModel.(callModel)
@@ -117,16 +115,22 @@ func (m Collections) View() string {
 	style := normal
 	if m.focused {
 		style = focused
+	} else if m.minified {
+		style = minified
 	}
 
+	// set the width and height of the box
+	style = style.Width(m.width - 2).Height(m.height - 2)
+
+	// if the collection is minified, render the minified version
 	if m.minified {
-		return zone.Mark("collections_minified", minified.Render(""))
+		return zone.Mark("collections_minified", style.Render(""))
 	}
 
 	if m.collection != nil {
-		header := config.BoxHeader.Copy().MaxWidth(25).
+		header := config.BoxHeader.MaxWidth(25).
 			Render("󰅁 " + m.collection.Name)
-		description := config.BoxDescription.Copy().MaxWidth(25).
+		description := config.BoxDescription.MaxWidth(25).
 			Render(m.collection.BaseUrl)
 
 		content := lipgloss.JoinVertical(

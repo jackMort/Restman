@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"restman/app"
 	"restman/components/collections"
 	"restman/components/config"
@@ -95,6 +94,8 @@ func (m *Model) Next() (tea.Model, tea.Cmd) {
 
 	switch m.focused {
 	case "collections":
+		m.focused = "tabs"
+	case "tabs":
 		m.focused = "url"
 	case "url":
 		m.focused = "request"
@@ -262,7 +263,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case app.SetFocusMsg:
-		fmt.Println("SetFocusMsg: ", msg.Item)
 		m.SetFocused(msg.Item)
 
 	case tea.KeyMsg:
@@ -327,6 +327,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+		println("Width: ", m.width, " Height: ", m.height)
 		m.tui.UpdateSize(msg)
 
 	default:

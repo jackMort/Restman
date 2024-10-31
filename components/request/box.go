@@ -38,18 +38,6 @@ var (
 
 	emptyMessage = lipgloss.NewStyle().Padding(2, 2).Foreground(config.COLOR_GRAY)
 
-	testStyle = lipgloss.NewStyle().
-			Bold(true).
-			Border(lipgloss.NormalBorder()).
-			BorderForeground(config.COLOR_SUBTLE).
-			PaddingLeft(1)
-
-	testStyleFocused = lipgloss.NewStyle().
-				Bold(true).
-				Border(lipgloss.NormalBorder()).
-				BorderForeground(config.COLOR_HIGHLIGHT).
-				PaddingLeft(1)
-
 	listHeader = lipgloss.NewStyle().
 			BorderStyle(lipgloss.NormalBorder()).
 			BorderBottom(true).
@@ -104,10 +92,6 @@ func (b Request) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		b.content = b.GetContent()
 
 	case tea.WindowSizeMsg:
-		testStyle.Width(msg.Width - 2)
-		testStyle.Height(msg.Height - 2)
-		testStyleFocused.Width(msg.Width - 2)
-		testStyleFocused.Height(msg.Height - 2)
 		b.width = msg.Width
 		b.height = msg.Height
 		b.content = b.GetContent()
@@ -181,9 +165,9 @@ func (b Request) View() string {
 	}
 	renderedTabs = append(renderedTabs, tabGap.Render(strings.Repeat(" ", b.width-43)))
 
-	windowStyle.Height(b.height - 4)
+	windowStyle = windowStyle.Height(b.height - 4)
 
-	style := inactiveTabStyle.Copy()
+	style := inactiveTabStyle
 	border, _, _, _, _ := style.GetBorder()
 	border.Right = " "
 	border.BottomRight = "┐"
