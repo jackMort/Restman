@@ -68,9 +68,9 @@ func (c Help) View() string {
 		icon,
 		" https://github.com/jackMort/Restman, version: "+version,
 		"",
-		general.Width(c.overlay.Width()).Render(helpView)),
+		general.Width(c.overlay.Width()-2).Render(helpView)),
 	)
-	dialog := lipgloss.Place(c.overlay.Width()-2, c.overlay.Height(), lipgloss.Left, lipgloss.Top, ui)
+	dialog := lipgloss.Place(c.overlay.Width(), c.overlay.Height(), lipgloss.Left, lipgloss.Top, ui)
 
 	return c.overlay.WrapView(dialog)
 }

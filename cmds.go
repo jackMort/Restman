@@ -7,10 +7,10 @@ import (
 	"os"
 	"restman/app"
 	"restman/components/collections"
+	"restman/components/config"
 	"restman/components/footer"
 	"restman/components/request"
 	"restman/components/results"
-	"restman/components/tabs"
 	"restman/components/url"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -47,6 +47,7 @@ Restman is a CLI tool for RESTful API.`,
 	},
 
 	Run: func(cmd *cobra.Command, args []string) {
+		config.SetVersion(version)
 		call := app.NewCall()
 		if len(args) >= 1 {
 			call.Url = args[0]
@@ -93,34 +94,38 @@ Restman is a CLI tool for RESTful API.`,
 		zone.NewGlobal()
 
 		// layout-tree defintion
-		m := Model{tui: boxer.Boxer{}, focused: "url", initalCall: call}
+		m := Model{tui: boxer.Boxer{}, focused: "url", initialCall: call}
 
 		url := url.New()
 		resultsBox := results.New()
 		requestBox := request.New()
 		footerBox := footer.New()
 		colBox := collections.New()
-		tabs := tabs.New()
+
+		splitNode := boxer.CreateNoBorderNode()
+		splitNode.SizeFunc = func(node boxer.Node, widthOrHeight int) []int {
+			paramsSize := int(float64(widthOrHeight) * 0.4)
+			return []int{
+				paramsSize,
+				widthOrHeight - paramsSize,
+			}
+		}
+		splitNode.Children = []boxer.Node{
+			stripErr(m.tui.CreateLeaf("request", requestBox)),
+			stripErr(m.tui.CreateLeaf("results", resultsBox)),
+		}
 
 		centerNode := boxer.CreateNoBorderNode()
 		centerNode.VerticalStacked = true
 		centerNode.SizeFunc = func(node boxer.Node, widthOrHeight int) []int {
-			size := widthOrHeight - 5
-			paramsSize := int(float64(size) * 0.4)
-			resultsSize := size - paramsSize
-
 			return []int{
-				2,
 				3,
-				paramsSize,
-				resultsSize,
+				widthOrHeight - 3,
 			}
 		}
 		centerNode.Children = []boxer.Node{
-			stripErr(m.tui.CreateLeaf("tabs", tabs)),
 			stripErr(m.tui.CreateLeaf("url", url)),
-			stripErr(m.tui.CreateLeaf("request", requestBox)),
-			stripErr(m.tui.CreateLeaf("results", resultsBox)),
+			splitNode,
 		}
 
 		// middle Node

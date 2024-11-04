@@ -21,6 +21,7 @@ var (
 )
 
 type listKeyMap struct {
+	esc              key.Binding
 	toggleSpinner    key.Binding
 	toggleTitleBar   key.Binding
 	toggleStatusBar  key.Binding
@@ -31,6 +32,9 @@ type listKeyMap struct {
 
 func newListKeyMap() *listKeyMap {
 	return &listKeyMap{
+		esc: key.NewBinding(
+			key.WithKeys("esc"),
+		),
 		insertItem: key.NewBinding(
 			key.WithKeys("a"),
 			key.WithHelp("a", "add item"),
@@ -127,6 +131,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		switch {
+		case key.Matches(msg, m.keys.esc):
+			// do nothing
+			return m, nil
 		case key.Matches(msg, m.keys.toggleSpinner):
 			cmd := m.list.ToggleSpinner()
 			return m, cmd

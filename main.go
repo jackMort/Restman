@@ -6,7 +6,6 @@ import (
 	"restman/components/config"
 	"restman/components/popup"
 	"restman/components/request"
-	"restman/components/tabs"
 	"restman/components/url"
 	"restman/utils"
 
@@ -56,27 +55,34 @@ type Model struct {
 	focused     string
 	popup       tea.Model
 	collections collections.Collections
-	initalCall  *app.Call
+	initialCall *app.Call
 	width       int
 	height      int
 }
 
 func (m Model) Init() tea.Cmd {
 	var (
-		cmd  tea.Cmd
-		cmd2 tea.Cmd
+		focusCmd      tea.Cmd
+		initalCallCmd tea.Cmd
+		runCmd        tea.Cmd
 	)
 
 	m.focused = "url"
-	m.tui.ModelMap[m.focused], cmd = m.tui.ModelMap[m.focused].Update(config.WindowFocusedMsg{State: true})
+	m.tui.ModelMap[m.focused], focusCmd = m.tui.ModelMap[m.focused].Update(config.WindowFocusedMsg{State: true})
 
-	tabs := m.tui.ModelMap["tabs"].(tabs.Tabs)
-	m.tui.ModelMap["tabs"], cmd2 = tabs.GetOrCreateTab(m.initalCall)
+	// set initial call if provided
+	if m.initialCall != nil {
+		initalCallCmd = func() tea.Msg {
+			return app.CallSelectedMsg{Call: m.initialCall}
+		}
+		runCmd = app.GetInstance().GetResponse(m.initialCall)
+	}
 
-	return tea.Batch(
+	return tea.Sequence(
 		app.GetInstance().ReadCollectionsFromJSON(),
-		cmd,
-		cmd2,
+		focusCmd,
+		initalCallCmd,
+		runCmd,
 	)
 }
 
@@ -94,7 +100,7 @@ func (m *Model) Next() (tea.Model, tea.Cmd) {
 
 	switch m.focused {
 	case "collections":
-		m.focused = "tabs"
+		m.focused = "url"
 	case "tabs":
 		m.focused = "url"
 	case "url":
@@ -286,8 +292,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.popup = collections.NewCreate(m.View(), utils.MinInt(70, 100))
 				return m, m.popup.Init()
 
-			case "ctrl+h":
-				m.popup = NewHelp(m.View(), 70)
+			case "ctrl+a":
+
+				bg := config.FullscreenStyle.
+					Width(m.width - 2).
+					Height(m.height - 2).
+					Render()
+				m.popup = NewHelp(bg, 70)
 				return m, m.popup.Init()
 
 			case "ctrl+s":
@@ -327,7 +338,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		println("Width: ", m.width, " Height: ", m.height)
 		m.tui.UpdateSize(msg)
 
 	default:
@@ -343,7 +353,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) SizeIsTooSmall() bool {
-	return m.width < 60 || m.height < 30
+	return m.width < 140 || m.height < 30
 }
 
 func (m Model) View() string {
@@ -355,7 +365,7 @@ func (m Model) View() string {
 				lipgloss.JoinVertical(
 					lipgloss.Left,
 					config.BoxHeader.Render("Restman "+version),
-					"Please resize the window to at least 60x20"),
+					"Please resize the window to at least 140x30"),
 			)
 	}
 

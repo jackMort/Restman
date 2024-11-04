@@ -3,6 +3,7 @@ package footer
 import (
 	"restman/app"
 	"restman/components/config"
+	"restman/utils"
 	"strconv"
 	"time"
 
@@ -12,16 +13,18 @@ import (
 )
 
 var (
-	container = lipgloss.NewStyle().
-			BorderForeground(config.COLOR_SUBTLE).
-			Background(config.COLOR_SUBTLE).
-			Border(lipgloss.NormalBorder()).
-			BorderBottom(false).
-			BorderTop(false)
+	container = lipgloss.NewStyle()
+	// BorderForeground(config.COLOR_SUBTLE).
+	// Background(config.COLOR_SUBTLE).
+	// Border(lipgloss.NormalBorder()).
+	// BorderBottom(false).
+	// BorderTop(false)
 
-	stopwatchStyle = lipgloss.NewStyle().
-			Background(config.COLOR_HIGHLIGHT).
-			Padding(0, 1)
+	versionStyle = lipgloss.NewStyle().
+			Foreground(config.COLOR_HIGHLIGHT)
+
+	nameStyle = lipgloss.NewStyle().
+			Foreground(config.COLOR_HIGHLIGHT).Underline(true)
 )
 
 // model represents the properties of the UI.
@@ -30,6 +33,7 @@ type model struct {
 	height     int
 	width      int
 	url        string
+	bytes      int64
 	loading    bool
 	statusCode int
 	error      error
@@ -52,7 +56,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.height = msg.Height
-		m.width = msg.Width - 2
+		m.width = msg.Width
 
 	case app.OnLoadingMsg:
 		m.error = nil
@@ -64,6 +68,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.Err == nil {
 			m.statusCode = msg.Response.StatusCode
 		}
+		m.bytes = msg.Bytes
 		m.error = msg.Err
 		m.loading = false
 		return m, m.stopwatch.Stop()
@@ -86,6 +91,10 @@ func (m model) View() string {
 		color = "#EF4444"
 	} else if m.statusCode > 0 {
 		status = "󰞉 STATUS: " + strconv.Itoa(m.statusCode)
+		if m.bytes > 0 {
+			status = status + "   SIZE: " + utils.ByteCountIEC(m.bytes)
+		}
+
 		if m.statusCode >= 200 && m.statusCode < 300 {
 			color = "#34D399"
 		} else if m.statusCode >= 300 && m.statusCode < 400 {
@@ -101,8 +110,8 @@ func (m model) View() string {
 	}
 
 	statusToRender := lipgloss.NewStyle().
-		Background(lipgloss.Color(color)).
-		Foreground(config.COLOR_SUBTLE).
+		Foreground(lipgloss.Color(color)).
+		// Foreground(config.COLOR_SUBTLE).
 		Padding(0, 1).
 		Render(status)
 
@@ -113,10 +122,11 @@ func (m model) View() string {
 			lipgloss.Left,
 			statusToRender,
 			lipgloss.PlaceHorizontal(
-				m.width-statusWidth,
+				m.width-statusWidth-1,
 				lipgloss.Right,
-				stopwatchStyle.Render(" "+m.stopwatch.View()),
-				lipgloss.WithWhitespaceBackground(config.COLOR_SUBTLE),
+				nameStyle.Render("Restman")+
+
+					versionStyle.Render(" v."+config.GetVersion()),
 			),
 		),
 	)

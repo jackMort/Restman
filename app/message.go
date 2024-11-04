@@ -15,6 +15,7 @@ type CallUpdatedMsg struct{ Call *Call }
 type OnResponseMsg struct {
 	Call     *Call
 	Body     string
+	Bytes    int64
 	Err      error
 	Response *http.Response
 }

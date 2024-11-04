@@ -111,7 +111,7 @@ func (m callModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		switch msg.String() {
-		case "ctrl+h":
+		case "esc":
 			return m, app.GetInstance().SetSelectedCollection(nil)
 
 		case "enter":

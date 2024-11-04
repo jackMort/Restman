@@ -1,57 +1,24 @@
 package results
 
 import (
+	"encoding/json"
 	"restman/app"
 	"restman/components/config"
-	"restman/components/tabs"
+	"restman/utils"
+	"strconv"
 	"strings"
 
+	"github.com/TylerBrock/colorjson"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	zone "github.com/lrstanley/bubblezone"
 )
 
-func tabBorderWithBottom(left, middle, right string) lipgloss.Border {
-	border := lipgloss.RoundedBorder()
-	border.BottomLeft = left
-	border.Bottom = middle
-	border.BottomRight = right
-	return border
-}
-
 var (
-	inactiveTabBorder = tabBorderWithBottom("┴", "─", "┴")
-	activeTabBorder   = tabBorderWithBottom("┘", " ", "└")
-	docStyle          = lipgloss.NewStyle()
-	highlightColor    = lipgloss.AdaptiveColor{Light: "#874BFD", Dark: "#7D56F4"}
-	inactiveTabStyle  = lipgloss.NewStyle().Border(inactiveTabBorder, true).BorderForeground(highlightColor).Padding(0, 1)
-	activeTabStyle    = inactiveTabStyle.Copy().Border(activeTabBorder, true)
-	windowStyle       = lipgloss.NewStyle().BorderForeground(highlightColor).Border(lipgloss.NormalBorder()).UnsetBorderTop()
-	tabGap            = inactiveTabStyle.Copy().
-				BorderTop(false).
-				BorderLeft(false).
-				BorderRight(false)
-
-	emptyMessage = lipgloss.NewStyle().Padding(2, 2).Foreground(config.COLOR_GRAY)
-
-	testStyle = lipgloss.NewStyle().
-			Bold(true).
-			Border(lipgloss.NormalBorder()).
-			BorderForeground(config.COLOR_SUBTLE).
-			PaddingLeft(1)
-
-	testStyleFocused = lipgloss.NewStyle().
-				Bold(true).
-				Border(lipgloss.NormalBorder()).
-				BorderForeground(config.COLOR_HIGHLIGHT).
-				PaddingLeft(1)
-
-	listHeader = lipgloss.NewStyle().
-			BorderStyle(lipgloss.NormalBorder()).
-			BorderBottom(true).
-			BorderForeground(config.COLOR_SUBTLE).
-			Render
+	inactiveStyle = lipgloss.NewStyle().BorderForeground(config.COLOR_SUBTLE).Border(lipgloss.NormalBorder())
+	activeStyle   = lipgloss.NewStyle().BorderForeground(config.COLOR_HIGHLIGHT).Border(lipgloss.NormalBorder())
+	emptyMessage  = lipgloss.NewStyle().Padding(2, 2).Foreground(config.COLOR_GRAY)
+	statusStyle   = lipgloss.NewStyle().Padding(0, 1).Background(config.COLOR_GRAY)
 )
 
 type Results struct {
@@ -65,6 +32,7 @@ type Results struct {
 	activeTab int
 	content   tea.Model
 	call      *app.Call
+	status    int
 }
 
 func New() Results {
@@ -84,14 +52,38 @@ func (b Results) Init() tea.Cmd {
 func (b Results) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
-	case tabs.TabFocusedMsg:
-		b.call = msg.Tab.Call
-		b.body = msg.Tab.Results
-		b.viewport.SetContent(string(b.body))
+	case app.CallSelectedMsg:
+		b.call = msg.Call
+
+	case app.OnResponseMsg:
+		if msg.Body != "" {
+			f := colorjson.NewFormatter()
+			f.Indent = 2
+
+			var obj interface{}
+			json.Unmarshal([]byte(msg.Body), &obj)
+			if obj == nil {
+				b.body = msg.Body
+			} else {
+				s, _ := f.Marshal(obj)
+				b.body = string(s)
+			}
+			// prepend line numbers to each line
+			lines := utils.SplitLines(b.body)
+			numberOfLines := len(lines)
+			maxDigits := len(strconv.Itoa(numberOfLines))
+			for i, line := range lines {
+				// pad line number with spaces
+				linenr := strconv.Itoa(i + 1)
+				line = strings.Repeat(" ", maxDigits-len(linenr)) + linenr + "  " + line
+				lines[i] = lipgloss.NewStyle().Foreground(config.COLOR_GRAY).Render(line) + "\n"
+			}
+			b.body = strings.Join(lines, "")
+			b.viewport.SetContent(string(b.body))
+			b.status = msg.Response.StatusCode
+		}
 
 	case tea.WindowSizeMsg:
-		testStyle = testStyle.Width(msg.Width - 2).Height(msg.Height - 2)
-		testStyleFocused = testStyleFocused.Width(msg.Width - 2).Height(msg.Height - 2)
 		b.width = msg.Width
 		b.height = msg.Height
 
@@ -126,63 +118,21 @@ func (b *Results) SetActiveTab(tab int) {
 }
 
 func (b Results) View() string {
-	doc := strings.Builder{}
-
-	var renderedTabs []string
-
+	var style lipgloss.Style
 	if b.focused {
-		inactiveTabStyle.BorderForeground(config.COLOR_HIGHLIGHT)
-		activeTabStyle.BorderForeground(config.COLOR_HIGHLIGHT)
-		windowStyle.BorderForeground(config.COLOR_HIGHLIGHT)
-		tabGap.BorderForeground(config.COLOR_HIGHLIGHT)
+		style = activeStyle
 	} else {
-		inactiveTabStyle.BorderForeground(config.COLOR_SUBTLE)
-		activeTabStyle.BorderForeground(config.COLOR_SUBTLE)
-		windowStyle.BorderForeground(config.COLOR_SUBTLE)
-		tabGap.BorderForeground(config.COLOR_SUBTLE)
+		style = inactiveStyle
 	}
-
-	for i, t := range b.Tabs {
-		var style lipgloss.Style
-		isFirst, isActive := i == 0, i == b.activeTab
-		if isActive {
-			style = activeTabStyle.Copy()
-		} else {
-			style = inactiveTabStyle.Copy()
-		}
-		border, _, _, _, _ := style.GetBorder()
-		if isFirst && isActive {
-			border.BottomLeft = "│"
-		} else if isFirst && !isActive {
-			border.BottomLeft = "├"
-		}
-
-		style = style.Border(border)
-		renderedTabs = append(renderedTabs, zone.Mark("tab_"+t, style.Render(t)))
-	}
-	renderedTabs = append(renderedTabs, tabGap.Render(strings.Repeat(" ", b.width-54)))
-
-	windowStyle.Height(b.height - 2)
-
-	style := inactiveTabStyle.Copy()
-	border, _, _, _, _ := style.GetBorder()
-	border.Right = " "
-	border.BottomRight = "┐"
-	style = style.Border(border).BorderTop(false).BorderLeft(false)
-	renderedTabs = append(renderedTabs, style.Render(" "))
-	row := lipgloss.JoinHorizontal(lipgloss.Bottom, renderedTabs...)
-	doc.WriteString(row)
-	doc.WriteString("\n")
 
 	b.viewport.Width = b.width - 2
 	b.viewport.Height = b.height - 4
 
 	var content string
-	if b.activeTab == 0 {
-		if b.body != "" {
-			content = b.viewport.View()
-		} else {
-			icon := `
+	if b.body != "" {
+		content = b.viewport.View()
+	} else {
+		icon := `
    ____
   /\___\
  /\ \___\
@@ -190,18 +140,21 @@ func (b Results) View() string {
   \/_/_/
 `
 
-			message := lipgloss.JoinVertical(
-				lipgloss.Center,
-				lipgloss.NewStyle().Foreground(config.COLOR_HIGHLIGHT).Render(icon),
-				"Not sent yet")
+		message := lipgloss.JoinVertical(
+			lipgloss.Center,
+			lipgloss.NewStyle().Foreground(config.COLOR_HIGHLIGHT).Render(icon),
+			"Not sent yet")
 
-			center := lipgloss.PlaceHorizontal(b.viewport.Width, lipgloss.Center, message)
-			content = lipgloss.NewStyle().
-				Foreground(config.COLOR_GRAY).
-				Bold(true).
-				Render(lipgloss.PlaceVertical(b.viewport.Height, lipgloss.Center, center))
-		}
+		center := lipgloss.PlaceHorizontal(b.viewport.Width, lipgloss.Center, message)
+		content = lipgloss.NewStyle().
+			Foreground(config.COLOR_GRAY).
+			Bold(true).
+			Render(lipgloss.PlaceVertical(b.viewport.Height-1, lipgloss.Center, center))
 	}
-	doc.WriteString(windowStyle.Width((lipgloss.Width(row) - windowStyle.GetHorizontalFrameSize())).Render(content))
-	return docStyle.Render(doc.String())
+
+	header := "Response"
+	if b.status != 0 {
+		header += " " + statusStyle.Render(strconv.Itoa(b.status))
+	}
+	return style.Render(" " + header + "\n\n" + content)
 }

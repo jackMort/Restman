@@ -7,7 +7,6 @@ import (
 	"restman/components/config"
 	"restman/components/headers"
 	"restman/components/params"
-	"restman/components/tabs"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -29,9 +28,9 @@ var (
 	docStyle          = lipgloss.NewStyle()
 	highlightColor    = lipgloss.AdaptiveColor{Light: "#874BFD", Dark: "#7D56F4"}
 	inactiveTabStyle  = lipgloss.NewStyle().Border(inactiveTabBorder, true).BorderForeground(highlightColor).Padding(0, 1)
-	activeTabStyle    = inactiveTabStyle.Copy().Border(activeTabBorder, true)
+	activeTabStyle    = inactiveTabStyle.Border(activeTabBorder, true)
 	windowStyle       = lipgloss.NewStyle().BorderForeground(highlightColor).Border(lipgloss.NormalBorder()).UnsetBorderTop()
-	tabGap            = inactiveTabStyle.Copy().
+	tabGap            = inactiveTabStyle.
 				BorderTop(false).
 				BorderLeft(false).
 				BorderRight(false)
@@ -86,9 +85,10 @@ func (b Request) GetContent() tea.Model {
 func (b Request) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
-	case tabs.TabFocusedMsg:
-		b.call = msg.Tab.Call
-		b.body = msg.Tab.Results
+	case app.CallSelectedMsg:
+		b.call = msg.Call
+		// TODO:
+		// b.body = msg.Tab.Results
 		b.content = b.GetContent()
 
 	case tea.WindowSizeMsg:
@@ -134,24 +134,24 @@ func (b Request) View() string {
 	var renderedTabs []string
 
 	if b.focused {
-		inactiveTabStyle.BorderForeground(config.COLOR_HIGHLIGHT)
-		activeTabStyle.BorderForeground(config.COLOR_HIGHLIGHT)
-		windowStyle.BorderForeground(config.COLOR_HIGHLIGHT)
-		tabGap.BorderForeground(config.COLOR_HIGHLIGHT)
+		inactiveTabStyle = inactiveTabStyle.BorderForeground(config.COLOR_HIGHLIGHT)
+		activeTabStyle = activeTabStyle.BorderForeground(config.COLOR_HIGHLIGHT)
+		windowStyle = windowStyle.BorderForeground(config.COLOR_HIGHLIGHT)
+		tabGap = tabGap.BorderForeground(config.COLOR_HIGHLIGHT)
 	} else {
-		inactiveTabStyle.BorderForeground(config.COLOR_SUBTLE)
-		activeTabStyle.BorderForeground(config.COLOR_SUBTLE)
-		windowStyle.BorderForeground(config.COLOR_SUBTLE)
-		tabGap.BorderForeground(config.COLOR_SUBTLE)
+		inactiveTabStyle = inactiveTabStyle.BorderForeground(config.COLOR_SUBTLE)
+		activeTabStyle = activeTabStyle.BorderForeground(config.COLOR_SUBTLE)
+		windowStyle = windowStyle.BorderForeground(config.COLOR_SUBTLE)
+		tabGap = tabGap.BorderForeground(config.COLOR_SUBTLE)
 	}
 
 	for i, t := range b.Tabs {
 		var style lipgloss.Style
 		isFirst, isActive := i == 0, i == b.activeTab
 		if isActive {
-			style = activeTabStyle.Copy()
+			style = activeTabStyle
 		} else {
-			style = inactiveTabStyle.Copy()
+			style = inactiveTabStyle
 		}
 		border, _, _, _, _ := style.GetBorder()
 		if isFirst && isActive {

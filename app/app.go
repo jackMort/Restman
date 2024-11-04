@@ -261,7 +261,9 @@ func (a *App) GetResponse(call *Call) tea.Cmd {
 			if err == nil {
 				defer response.Body.Close()
 				body, err := io.ReadAll(response.Body)
-				return OnResponseMsg{Call: call, Body: string(body), Err: err, Response: response}
+				// get response size in bytes
+				bytes := int64(len(body))
+				return OnResponseMsg{Call: call, Body: string(body), Bytes: bytes, Err: err, Response: response}
 			}
 			return OnResponseMsg{Call: call, Err: err, Response: response}
 		})

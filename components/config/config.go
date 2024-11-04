@@ -5,6 +5,8 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+var version = "dev"
+
 var (
 	// App Colors
 	COLOR_SUBTLE     = lipgloss.AdaptiveColor{Light: "#D9DCCF", Dark: "#383838"}
@@ -97,6 +99,14 @@ type KeyMap struct {
 	ChangeActivePanel key.Binding
 	Save              key.Binding
 	ChangeToggle      key.Binding
+}
+
+func SetVersion(v string) {
+	version = v
+}
+
+func GetVersion() string {
+	return version
 }
 
 func (k KeyMap) ShortHelp() []key.Binding {

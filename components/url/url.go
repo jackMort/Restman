@@ -3,7 +3,6 @@ package url
 import (
 	"restman/app"
 	"restman/components/config"
-	"restman/components/tabs"
 	"restman/utils"
 	"strings"
 
@@ -97,9 +96,9 @@ func (m Url) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 
-	case tabs.TabFocusedMsg:
-		if msg.Tab.Call != nil {
-			m.call = msg.Tab.Call
+	case app.CallSelectedMsg:
+		if msg.Call != nil {
+			m.call = msg.Call
 			m.defaultText = m.call.Url
 			m.t.SetValue(m.defaultText)
 			m.method = m.call.Method
@@ -134,19 +133,6 @@ func (m Url) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.Submit()
 		case "ctrl+r":
 			m.CycleOverMethods()
-
-		default:
-			var cmds []tea.Cmd
-
-			newModel, cmd := m.t.Update(msg)
-			cmds = append(cmds, cmd)
-
-			m.t = newModel
-
-			m.call.Url = m.t.Value()
-			cmds = append(cmds, func() tea.Msg { return app.CallUpdatedMsg{Call: m.call} })
-
-			return m, tea.Batch(cmds...)
 		}
 	}
 

@@ -18,6 +18,7 @@ var (
 	minified = lipgloss.NewStyle().
 			Border(lipgloss.NormalBorder()).
 			BorderForeground(config.COLOR_SUBTLE).
+			Foreground(config.COLOR_FOREGROUND).
 			PaddingLeft(1)
 
 	focused = lipgloss.NewStyle().
@@ -124,7 +125,7 @@ func (m Collections) View() string {
 
 	// if the collection is minified, render the minified version
 	if m.minified {
-		return zone.Mark("collections_minified", style.Render(""))
+		return zone.Mark("collections_minified", style.Render(" \n\nC\nO\nL\nL\nE\nC\nT\nI\nO\nN\nS"))
 	}
 
 	if m.collection != nil {
