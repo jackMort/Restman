@@ -95,6 +95,13 @@ func (i Call) Title() string {
 	return "untitled"
 }
 
+func (i Call) IsValid() bool {
+	if i.Url == "" {
+		return false
+	}
+	return true
+}
+
 func (i Call) Collection() *Collection {
 	app := GetInstance()
 	for _, c := range app.Collections {

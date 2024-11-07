@@ -149,7 +149,7 @@ func (b Results) View() string {
 		content = lipgloss.NewStyle().
 			Foreground(config.COLOR_GRAY).
 			Bold(true).
-			Render(lipgloss.PlaceVertical(b.viewport.Height-1, lipgloss.Center, center))
+			Render(lipgloss.PlaceVertical(b.viewport.Height, lipgloss.Center, center))
 	}
 
 	header := "Response"

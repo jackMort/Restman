@@ -71,7 +71,7 @@ func (m Model) Init() tea.Cmd {
 	m.tui.ModelMap[m.focused], focusCmd = m.tui.ModelMap[m.focused].Update(config.WindowFocusedMsg{State: true})
 
 	// set initial call if provided
-	if m.initialCall != nil {
+	if m.initialCall != nil && m.initialCall.IsValid() {
 		initalCallCmd = func() tea.Msg {
 			return app.CallSelectedMsg{Call: m.initialCall}
 		}
@@ -177,6 +177,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case popup.ClosePopupMsg:
 		m.popup = nil
+
+	case app.CallSelectedMsg:
+		m.SetFocused("url")
 
 	case tea.MouseMsg:
 		if msg.Type == tea.MouseLeft {
