@@ -259,8 +259,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case collections.CreateResultMsg, collections.AddToCollectionResultMsg:
+		cmd := m.AddToCollection()
 		m.popup = nil
-		return m, nil
+		return m, cmd
 	}
 
 	// If we are showing a popup, we need to update the popup

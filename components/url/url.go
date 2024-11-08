@@ -74,6 +74,9 @@ func (m Url) Method() string {
 }
 
 func (m Url) Call() *app.Call {
+	if m.call == nil {
+		m.call = app.NewCall()
+	}
 	return m.call
 }
 
@@ -82,13 +85,10 @@ func (m Url) Init() tea.Cmd {
 }
 
 func (m Url) Submit() (tea.Model, tea.Cmd) {
-	call := m.call
-	if m.call != nil {
-		call.Url = m.t.Prompt + m.t.Value()
-		call.Method = m.method
-		return m, app.GetInstance().GetResponse(call)
-	}
-	return m, nil
+	call := m.Call()
+	call.Url = m.t.Prompt + m.t.Value()
+	call.Method = m.method
+	return m, app.GetInstance().GetResponse(call)
 }
 
 func (m Url) Update(msg tea.Msg) (tea.Model, tea.Cmd) {

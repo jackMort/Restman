@@ -71,17 +71,17 @@ var FullscreenStyle = lipgloss.NewStyle().
 	Padding(1)
 
 var Methods = map[string]string{
-	"GET":    MethodStyle.Copy().Background(lipgloss.Color(methodColors["GET"])).Render("GET"),
-	"POST":   MethodStyle.Copy().Background(lipgloss.Color(methodColors["POST"])).Render("POST"),
-	"PUT":    MethodStyle.Copy().Background(lipgloss.Color(methodColors["PUT"])).Render("PUT"),
-	"DELETE": MethodStyle.Copy().Background(lipgloss.Color(methodColors["DELETE"])).Render("DELETE"),
+	"GET":    MethodStyle.Background(lipgloss.Color(methodColors["GET"])).Render("GET"),
+	"POST":   MethodStyle.Background(lipgloss.Color(methodColors["POST"])).Render("POST"),
+	"PUT":    MethodStyle.Background(lipgloss.Color(methodColors["PUT"])).Render("PUT"),
+	"DELETE": MethodStyle.Background(lipgloss.Color(methodColors["DELETE"])).Render("DELETE"),
 }
 
 var MethodsShort = map[string]string{
-	"GET":    MethodStyleShort.Copy().Foreground(lipgloss.Color(methodColors["GET"])).Render("GET"),
-	"POST":   MethodStyleShort.Copy().Foreground(lipgloss.Color(methodColors["POST"])).Render("POS"),
-	"PUT":    MethodStyleShort.Copy().Foreground(lipgloss.Color(methodColors["PUT"])).Render("PUT"),
-	"DELETE": MethodStyleShort.Copy().Foreground(lipgloss.Color(methodColors["DELETE"])).Render("DEL"),
+	"GET":    MethodStyleShort.Foreground(lipgloss.Color(methodColors["GET"])).Render("GET"),
+	"POST":   MethodStyleShort.Foreground(lipgloss.Color(methodColors["POST"])).Render("POS"),
+	"PUT":    MethodStyleShort.Foreground(lipgloss.Color(methodColors["PUT"])).Render("PUT"),
+	"DELETE": MethodStyleShort.Foreground(lipgloss.Color(methodColors["DELETE"])).Render("DEL"),
 }
 
 type WindowFocusedMsg struct {

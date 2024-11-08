@@ -60,7 +60,7 @@ func NewAddToCollection(bgRaw string, width int, vWidth int) AddToCollection {
 	inputs[COLLECTION_IDX].SetSuggestions(suggestions)
 
 	return AddToCollection{
-		overlay: popup.NewOverlayOnPosition(bgRaw, width, 13, 5, vWidth-width-4),
+		overlay: popup.NewOverlayOnPosition(bgRaw, width, 13, 3, vWidth-width-4),
 		inputs:  inputs,
 		focused: 0,
 	}
