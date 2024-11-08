@@ -3,7 +3,9 @@ package collections
 import (
 	"restman/app"
 	"restman/components/config"
+	"restman/components/overlay"
 	"restman/components/popup"
+	"restman/utils"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -38,6 +40,7 @@ type Create struct {
 	inputs  []textinput.Model
 	focused int
 	err     error
+	bgRaw   string
 }
 
 func NewCreate(bgRaw string, width int) Create {
@@ -52,6 +55,7 @@ func NewCreate(bgRaw string, width int) Create {
 	inputs[BASE_URL_IDX].Prompt = ""
 
 	return Create{
+		bgRaw:   bgRaw,
 		overlay: popup.NewOverlay(bgRaw, width, 13),
 		inputs:  inputs,
 		focused: 0,
@@ -156,7 +160,10 @@ func (c Create) View() string {
 	ui := lipgloss.JoinVertical(lipgloss.Left, header, " ", inputs)
 	dialog := lipgloss.Place(c.overlay.Width()-2, c.overlay.Height()-2, lipgloss.Left, lipgloss.Top, ui)
 
-	return c.overlay.WrapView(general.Render(dialog))
+	content := general.Render(dialog)
+
+	startCol, startRow := utils.GetStartColRow(content, c.bgRaw)
+	return overlay.PlaceOverlay(startCol, startRow, content, c.bgRaw)
 }
 
 func (c Create) makeChoice() tea.Cmd {

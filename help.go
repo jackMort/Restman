@@ -2,7 +2,9 @@ package main
 
 import (
 	"restman/components/config"
+	"restman/components/overlay"
 	"restman/components/popup"
+	"restman/utils"
 
 	"github.com/charmbracelet/bubbles/help"
 	tea "github.com/charmbracelet/bubbletea"
@@ -20,6 +22,7 @@ type Help struct {
 	overlay popup.Overlay
 	help    help.Model
 	keys    config.KeyMap
+	bgRaw   string
 }
 
 func NewHelp(bgRaw string, width int) Help {
@@ -29,6 +32,7 @@ func NewHelp(bgRaw string, width int) Help {
 		help:    help,
 		keys:    config.Keys,
 		overlay: popup.NewOverlay(bgRaw, width, 20),
+		bgRaw:   bgRaw,
 	}
 }
 
@@ -72,5 +76,8 @@ func (c Help) View() string {
 	)
 	dialog := lipgloss.Place(c.overlay.Width(), c.overlay.Height(), lipgloss.Left, lipgloss.Top, ui)
 
-	return c.overlay.WrapView(dialog)
+	startCol, startRow := utils.GetStartColRow(dialog, c.bgRaw)
+	return overlay.PlaceOverlay(startCol, startRow, dialog, c.bgRaw)
+
+	// return c.overlay.WrapView(dialog)
 }

@@ -26,6 +26,7 @@ func newItemDelegate(keys *delegateKeyMap) list.DefaultDelegate {
 				if len(m.Items()) == 0 {
 					keys.remove.SetEnabled(false)
 				}
+				// TODO: ask for confirmation
 				return app.GetInstance().RemoveCollection(i)
 			}
 		}

@@ -18,7 +18,7 @@ var (
 	minified = lipgloss.NewStyle().
 			Border(lipgloss.NormalBorder()).
 			BorderForeground(config.COLOR_SUBTLE).
-			Foreground(config.COLOR_FOREGROUND).
+			Foreground(config.COLOR_GRAY).
 			PaddingLeft(1)
 
 	focused = lipgloss.NewStyle().

@@ -258,8 +258,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
-	case collections.CreateResultMsg, collections.AddToCollectionResultMsg:
-		cmd := m.AddToCollection()
+		// TODO: refactor to use in the same way as AddToCollection
+	case collections.CreateResultMsg:
+		m.popup = nil
+		return m, cmd
+
+	case collections.AddToCollectionResultMsg:
+		if msg.Result {
+			cmd = m.AddToCollection()
+		}
 		m.popup = nil
 		return m, cmd
 	}
@@ -297,12 +304,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, m.popup.Init()
 
 			case "ctrl+a":
-
-				bg := config.FullscreenStyle.
-					Width(m.width - 2).
-					Height(m.height - 2).
-					Render()
-				m.popup = NewHelp(bg, 70)
+				m.popup = NewHelp(m.View(), 70)
 				return m, m.popup.Init()
 
 			case "ctrl+s":
