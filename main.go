@@ -121,6 +121,39 @@ func (m *Model) Next() (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+func (m *Model) Prev() (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+	var cmds []tea.Cmd
+
+	if m.focused != "" {
+		var previous tea.Model = m.tui.ModelMap[m.focused]
+		m.tui.ModelMap[m.focused], cmd = previous.Update(config.WindowFocusedMsg{State: false})
+		cmds = append(cmds, cmd)
+	}
+
+	coll := m.tui.ModelMap["collections"].(collections.Collections)
+
+	switch m.focused {
+	case "collections":
+		m.focused = "results"
+	case "results":
+		m.focused = "request"
+	case "request":
+		m.focused = "url"
+	default:
+		if coll.IsMinified() {
+			m.focused = "results"
+		} else {
+			m.focused = "collections"
+		}
+	}
+
+	m.tui.ModelMap[m.focused], cmd = m.tui.ModelMap[m.focused].Update(config.WindowFocusedMsg{State: true})
+
+	cmds = append(cmds, cmd)
+	return m, tea.Batch(cmds...)
+}
+
 func (m *Model) SetFocused(newFocused string) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
@@ -322,6 +355,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			case "tab":
 				m, cmd := m.Next()
+				return m, cmd
+
+			case "shift+tab":
+				m, cmd := m.Prev()
 				return m, cmd
 
 			case "ctrl+f":
