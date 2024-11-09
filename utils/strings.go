@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"regexp"
 	"strings"
 
 	"github.com/muesli/ansi"
@@ -38,4 +39,11 @@ func GetStartColRow(content string, bgRaw string) (int, int) {
 	startCol := (bgWidth - width) / 2
 
 	return startCol, startRow
+}
+
+// Regex to match ANSI escape codes
+var ansiReg = regexp.MustCompile(`\x1b\[[0-9;]*m`)
+
+func RemoveANSI(str string) string {
+	return ansiReg.ReplaceAllString(str, "")
 }

@@ -162,6 +162,10 @@ func (m Model) AddToCollection() tea.Cmd {
 	return app.GetInstance().AddToCollection(coll.CollectionName(), call)
 }
 
+func (m Model) GetFadedView() string {
+	return lipgloss.NewStyle().Foreground(config.COLOR_SUBTLE).Render(utils.RemoveANSI(m.View()))
+}
+
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var cmds []tea.Cmd
@@ -202,7 +206,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.SetFocused("url")
 				url := m.getUrlPane()
 
-				coll := collections.NewAddToCollection(m.View(), 40, m.tui.LayoutTree.GetWidth())
+				coll := collections.NewAddToCollection(m.GetFadedView(), 40, m.tui.LayoutTree.GetWidth())
 				coll.SetUrl(url.Value())
 
 				m.popup = coll
@@ -296,21 +300,21 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 
 				width := 100
-				m.popup = popup.NewChoice(m.View(), width, "Are you sure, you want to quit?", false)
+				m.popup = popup.NewChoice(m.GetFadedView(), width, "Are you sure, you want to quit?", false)
 				return m, m.popup.Init()
 
 			case "ctrl+n":
-				m.popup = collections.NewCreate(m.View(), utils.MinInt(70, 100))
+				m.popup = collections.NewCreate(m.GetFadedView(), utils.MinInt(70, 100))
 				return m, m.popup.Init()
 
 			case "ctrl+a":
-				m.popup = NewHelp(m.View(), 70)
+				m.popup = NewHelp(m.GetFadedView(), 70)
 				return m, m.popup.Init()
 
 			case "ctrl+s":
 				url := m.getUrlPane()
 
-				coll := collections.NewAddToCollection(m.View(), 40, m.tui.LayoutTree.GetWidth())
+				coll := collections.NewAddToCollection(m.GetFadedView(), 40, m.tui.LayoutTree.GetWidth())
 				coll.SetUrl(url.Value())
 
 				m.popup = coll
