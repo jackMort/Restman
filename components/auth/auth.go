@@ -155,7 +155,10 @@ func (c *Model) nextMethod() tea.Cmd {
 		c.method = INHERIT
 		c.focused = 0
 	}
-	return app.GetInstance().SetCallAuthType(c.call, c.method)
+	if c.call != nil {
+		return app.GetInstance().SetCallAuthType(c.call, c.method)
+	}
+	return nil
 }
 
 func (c Model) getKey() string {
@@ -208,10 +211,13 @@ func (c Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			key := c.getKey()
 			value := c.inputs[c.focused].Value()
 
-			return c, tea.Sequence(
-				cmd,
-				app.GetInstance().SetCallAuthValue(c.call, key, value),
-			)
+			if c.call != nil {
+				return c, tea.Sequence(
+					cmd,
+					app.GetInstance().SetCallAuthValue(c.call, key, value),
+				)
+			}
+			return c, nil
 
 		}
 	}

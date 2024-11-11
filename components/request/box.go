@@ -1,12 +1,12 @@
 package request
 
 import (
-	"net/url"
 	"restman/app"
 	"restman/components/auth"
 	"restman/components/config"
 	"restman/components/headers"
 	"restman/components/params"
+	"strconv"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -69,15 +69,8 @@ func (b Request) Init() tea.Cmd {
 }
 
 func (b Request) GetContent() tea.Model {
-	m := make(map[string][]string)
 	if b.activeTab == 0 {
-		if b.call != nil {
-			u, err := url.Parse(b.call.Url)
-			if err == nil && b.call.Url != "" {
-				m, _ = url.ParseQuery(u.RawQuery)
-			}
-		}
-		return params.New(m, b.width, b.height)
+		return params.New(b.call, b.width, b.height)
 	} else if b.activeTab == 1 {
 		return headers.New(b.call, b.width-2, b.width)
 	} else if b.activeTab == 2 {
@@ -169,11 +162,36 @@ func (b Request) View() string {
 			border.BottomLeft = "├"
 		}
 
+		counterSign := ""
+		counter := ""
+		if i == 0 {
+			if b.call != nil {
+				if b.call.ParamsCount() > 0 {
+					counterSign = strconv.Itoa(b.call.ParamsCount())
+				}
+			}
+		} else if i == 1 {
+			if b.call != nil {
+				if b.call.HeadersCount() > 0 {
+					counterSign = strconv.Itoa(b.call.HeadersCount())
+				}
+			}
+		} else if i == 2 {
+			counterSign = "󱐋"
+		} else if i == 3 {
+			counterSign = ""
+		}
+
+		if counterSign != "" {
+			counter = lipgloss.NewStyle().Foreground(config.COLOR_SPECIAL).Render(counterSign)
+		}
+
 		style = style.Border(border)
-		renderedTabs = append(renderedTabs, zone.Mark("tab_"+t, style.Render(t+" ")))
-		tabNames += t + " "
+		tabName := style.Render(t + " " + counter)
+		renderedTabs = append(renderedTabs, zone.Mark("tab_"+t, tabName))
+		tabNames += t + " " + counterSign + "    "
 	}
-	renderedTabs = append(renderedTabs, tabGap.Render(strings.Repeat(" ", b.width-len(tabNames)-14)))
+	renderedTabs = append(renderedTabs, tabGap.Render(strings.Repeat(" ", b.width-len(tabNames)-3)))
 
 	windowStyle = windowStyle.Height(b.height - 4)
 

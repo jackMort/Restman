@@ -2,6 +2,7 @@ package params
 
 import (
 	"net/url"
+	"restman/app"
 	"restman/components/config"
 	"sort"
 	"strings"
@@ -24,11 +25,19 @@ var styleBase = lipgloss.NewStyle().
 type Model struct {
 	width       int
 	height      int
+	call        *app.Call
 	simpleTable table.Model
+	items       url.Values
 }
 
-func New(items url.Values, width int, height int) Model {
-	colWidth := (width - 4) / 2
+func New(call *app.Call, width int, height int) Model {
+	items := make(map[string][]string)
+	if call != nil {
+		u, err := url.Parse(call.Url)
+		if err == nil && call.Url != "" {
+			items, _ = url.ParseQuery(u.RawQuery)
+		}
+	}
 
 	// sort items
 	keys := make([]string, 0, len(items))
@@ -47,13 +56,16 @@ func New(items url.Values, width int, height int) Model {
 	}
 
 	return Model{
+		call:   call,
+		items:  items,
 		width:  width,
 		height: height,
 		simpleTable: table.New([]table.Column{
-			table.NewColumn(columnKeyKey, " Key", colWidth),
-			table.NewColumn(columnKeyValue, " Value", colWidth),
+			table.NewColumn(columnKeyKey, " Key", 20),
+			table.NewColumn(columnKeyValue, " Value", width-25),
 		}).WithRows(rows).BorderRounded().
-			WithBaseStyle(styleBase),
+			WithBaseStyle(styleBase).
+			Focused(true),
 	}
 }
 
@@ -74,5 +86,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
+	if len(m.items) == 0 {
+		return config.EmptyMessageStyle.Padding(2, 2).Render("No query params defined.")
+	}
 	return m.simpleTable.View()
 }

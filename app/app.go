@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"path/filepath"
 	"restman/components/config"
@@ -93,6 +94,20 @@ func (i Call) Title() string {
 		}
 	}
 	return "untitled"
+}
+
+func (i Call) HeadersCount() int {
+	return len(i.Headers)
+}
+
+func (i Call) ParamsCount() int {
+
+	items := make(map[string][]string)
+	u, err := url.Parse(i.Url)
+	if err == nil && i.Url != "" {
+		items, _ = url.ParseQuery(u.RawQuery)
+	}
+	return len(items)
 }
 
 func (i Call) IsValid() bool {

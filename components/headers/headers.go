@@ -104,8 +104,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	if m.call != nil && len(m.call.Headers) == 0 {
-		return config.EmptyMessageStyle.Padding(2, 2).Render("No headers defined")
+	if m.call == nil || (m.call != nil && len(m.call.Headers) == 0) {
+		return config.EmptyMessageStyle.Padding(2, 2).Render("No headers defined.")
 	}
 	return m.simpleTable.View()
 }
