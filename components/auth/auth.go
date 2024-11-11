@@ -58,24 +58,28 @@ func New(width int, call *app.Call) Model {
 	inputs[USERNAME_IDX].Placeholder = "username"
 	inputs[USERNAME_IDX].Focus()
 	inputs[USERNAME_IDX].Prompt = "  "
-	inputs[USERNAME_IDX].Width = 40
+	inputs[USERNAME_IDX].Width = width - 12
 
 	inputs[PASSWORD_IDX] = textinput.New()
 	inputs[PASSWORD_IDX].Placeholder = "password"
 	inputs[PASSWORD_IDX].Prompt = "󰌆  "
+	inputs[PASSWORD_IDX].Width = width - 12
 
 	inputs[TOKEN_IDX] = textinput.New()
 	inputs[TOKEN_IDX].Placeholder = "token"
 	inputs[TOKEN_IDX].Prompt = "󰌆  "
+	inputs[TOKEN_IDX].Width = width - 12
 
 	inputs[API_KEY_IDX] = textinput.New()
 	inputs[API_KEY_IDX].Placeholder = "header name"
 	inputs[API_KEY_IDX].Focus()
 	inputs[API_KEY_IDX].Prompt = "  "
+	inputs[API_KEY_IDX].Width = width - 12
 
 	inputs[API_VALUE_IDX] = textinput.New()
 	inputs[API_VALUE_IDX].Placeholder = "value"
 	inputs[API_VALUE_IDX].Prompt = "󰌆  "
+	inputs[API_VALUE_IDX].Width = width - 12
 
 	method := INHERIT
 	if call != nil && call.Auth != nil {
@@ -185,7 +189,7 @@ func (c Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if msg, ok := msg.(tea.KeyMsg); ok {
 		switch msg.Type {
 
-		case tea.KeyCtrlE:
+		case tea.KeyCtrlT:
 			// cycle over methods
 			c.nextMethod()
 
