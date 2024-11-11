@@ -65,12 +65,22 @@ func New() Request {
 
 // satisfy the tea.Model interface
 func (b Request) Init() tea.Cmd {
-	b.activeTab = 0
 	return nil
 }
 
 func (b Request) GetContent() tea.Model {
-	if b.activeTab == 2 {
+	m := make(map[string][]string)
+	if b.activeTab == 0 {
+		if b.call != nil {
+			u, err := url.Parse(b.call.Url)
+			if err == nil && b.call.Url != "" {
+				m, _ = url.ParseQuery(u.RawQuery)
+			}
+		}
+		return params.New(m, b.width, b.height)
+	} else if b.activeTab == 1 {
+		return headers.New(b.call, b.width-2, b.width)
+	} else if b.activeTab == 2 {
 		return auth.New(b.width, b.call)
 	} else if b.activeTab == 3 {
 		body := ""
@@ -87,8 +97,6 @@ func (b Request) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case app.CallSelectedMsg:
 		b.call = msg.Call
-		// TODO:
-		// b.body = msg.Tab.Results
 		b.content = b.GetContent()
 
 	case tea.WindowSizeMsg:
@@ -145,6 +153,7 @@ func (b Request) View() string {
 		tabGap = tabGap.BorderForeground(config.COLOR_SUBTLE)
 	}
 
+	tabNames := ""
 	for i, t := range b.Tabs {
 		var style lipgloss.Style
 		isFirst, isActive := i == 0, i == b.activeTab
@@ -161,9 +170,10 @@ func (b Request) View() string {
 		}
 
 		style = style.Border(border)
-		renderedTabs = append(renderedTabs, zone.Mark("tab_"+t, style.Render(t)))
+		renderedTabs = append(renderedTabs, zone.Mark("tab_"+t, style.Render(t+" ")))
+		tabNames += t + " "
 	}
-	renderedTabs = append(renderedTabs, tabGap.Render(strings.Repeat(" ", b.width-43)))
+	renderedTabs = append(renderedTabs, tabGap.Render(strings.Repeat(" ", b.width-len(tabNames)-14)))
 
 	windowStyle = windowStyle.Height(b.height - 4)
 
@@ -179,34 +189,9 @@ func (b Request) View() string {
 
 	var content string
 	if b.activeTab == 0 {
-		content = emptyMessage.Render("No url params")
-		if b.call != nil {
-
-			u, err := url.Parse(b.call.Url)
-			if err == nil && b.call.Url != "" {
-				m, _ := url.ParseQuery(u.RawQuery)
-				if len(m) > 0 {
-
-					table := params.New(m, b.width, b.height)
-					content = lipgloss.NewStyle().
-						UnsetBold().
-						Render(
-							table.View(),
-						)
-				}
-			}
-		}
+		content = b.content.View()
 	} else if b.activeTab == 1 {
-		h := []string{}
-		if b.call != nil {
-			h = b.call.Headers
-		}
-		table := headers.New(h, b.width-2, b.width)
-		content = lipgloss.NewStyle().
-			UnsetBold().
-			Render(
-				table.View(),
-			)
+		content = b.content.View()
 	} else if b.activeTab == 2 {
 		content = b.content.View()
 	} else if b.activeTab == 3 {

@@ -1,6 +1,7 @@
 package headers
 
 import (
+	"restman/app"
 	"restman/components/config"
 	"strings"
 
@@ -23,9 +24,10 @@ type Model struct {
 	width       int
 	height      int
 	simpleTable table.Model
+	call        *app.Call
 }
 
-func New(headers []string, width int, height int) Model {
+func GetRows(headers []string) []table.Row {
 	rows := make([]table.Row, 0, len(headers))
 	for _, header := range headers {
 		// split : to get key and value
@@ -36,14 +38,24 @@ func New(headers []string, width int, height int) Model {
 		})
 		rows = append(rows, row)
 	}
+	return rows
+}
+
+func New(call *app.Call, width int, height int) Model {
+
+	headers := []string{}
+	if call != nil {
+		headers = call.Headers
+	}
 
 	return Model{
+		call:   call,
 		width:  width,
 		height: height,
 		simpleTable: table.New([]table.Column{
 			table.NewColumn(columnKeyKey, " Key", 20),
 			table.NewColumn(columnKeyValue, " Value", width-23),
-		}).WithRows(rows).BorderRounded().
+		}).WithRows(GetRows(headers)).BorderRounded().
 			WithBaseStyle(styleBase).
 			Focused(true),
 	}
@@ -59,6 +71,32 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds []tea.Cmd
 	)
 
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		{
+			switch msg.String() {
+			case "x":
+				key := strings.TrimSpace(m.simpleTable.HighlightedRow().Data[columnKeyKey].(string))
+				headers := []string{}
+				for _, header := range m.call.Headers {
+					if key != strings.Split(header, ":")[0] {
+						headers = append(headers, header)
+					}
+				}
+				m.call.Headers = headers
+
+				cmd := func() tea.Msg {
+					return app.CallUpdatedMsg{Call: m.call}
+				}
+				m.simpleTable = m.simpleTable.WithRows(GetRows(m.call.Headers))
+				cmds = append(cmds, cmd)
+			}
+		}
+	case app.CallUpdatedMsg:
+		m.call = msg.Call
+
+	}
+
 	m.simpleTable, cmd = m.simpleTable.Update(msg)
 	cmds = append(cmds, cmd)
 
@@ -66,5 +104,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
+	if m.call != nil && len(m.call.Headers) == 0 {
+		return config.EmptyMessageStyle.Padding(2, 2).Render("No headers defined")
+	}
 	return m.simpleTable.View()
 }
