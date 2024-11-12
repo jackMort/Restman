@@ -15,6 +15,7 @@ var (
 	COLOR_FOREGROUND = lipgloss.AdaptiveColor{Light: "#666666", Dark: "#ffffff"}
 	COLOR_GRAY       = lipgloss.AdaptiveColor{Light: "#666666", Dark: "#666666"}
 	COLOR_WHITE      = lipgloss.AdaptiveColor{Light: "#ffffff", Dark: "#ffffff"}
+	COLOR_LINK       = lipgloss.AdaptiveColor{Light: "#6C9EF8", Dark: "#6C9EF8"}
 )
 
 const (
@@ -45,7 +46,7 @@ var ButtonStyle = lipgloss.NewStyle().
 	Background(COLOR_GRAY).
 	Padding(0, 2)
 
-var ActiveButtonStyle = ButtonStyle.Copy().
+var ActiveButtonStyle = ButtonStyle.
 	Foreground(COLOR_FOREGROUND).
 	Background(COLOR_HIGHLIGHT).
 	Underline(true)
@@ -69,6 +70,11 @@ var FullscreenStyle = lipgloss.NewStyle().
 	Align(lipgloss.Center).
 	AlignVertical(lipgloss.Center).
 	Padding(1)
+
+var LinkStyle = lipgloss.NewStyle().
+	Bold(true).
+	Underline(true).
+	Foreground(COLOR_LINK)
 
 var Methods = map[string]string{
 	"GET":    MethodStyle.Background(lipgloss.Color(methodColors["GET"])).Render("GET"),

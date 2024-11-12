@@ -87,7 +87,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m Model) View() string {
 	if len(m.items) == 0 {
-		return config.EmptyMessageStyle.Padding(2, 2).Render("No query params defined.")
+		return config.EmptyMessageStyle.Padding(2, 2).Render("No query params defined. You can " + config.LinkStyle.Underline(true).Render("add param"))
 	}
-	return m.simpleTable.View()
+	return m.simpleTable.View() + "\n" + config.LinkStyle.Padding(0, 1).Render("+ Add Param")
 }
