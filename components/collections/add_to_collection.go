@@ -45,6 +45,7 @@ func NewAddToCollection(bgRaw string, width int, vWidth int) AddToCollection {
 	inputs[URL_IDX] = textinput.New()
 	inputs[URL_IDX].Placeholder = "https://sampleapi.com/api/v1"
 	inputs[URL_IDX].Prompt = ""
+	inputs[URL_IDX].Width = 35
 
 	if app.GetInstance().SelectedCollection != nil {
 		inputs[COLLECTION_IDX].SetValue(app.GetInstance().SelectedCollection.Name)
