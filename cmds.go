@@ -12,6 +12,7 @@ import (
 	"restman/components/request"
 	"restman/components/results"
 	"restman/components/url"
+	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 	zone "github.com/lrstanley/bubblezone"
@@ -69,7 +70,23 @@ Restman is a CLI tool for RESTful API.`,
 
 		headers, _ := cmd.Flags().GetStringArray("header")
 		if headers != nil {
-			call.Headers = headers
+			// split headers into key-value pairs
+			// to check authorization for bearer token
+			processed_headers := []string{}
+			for _, h := range headers {
+				if h == "" {
+					continue
+				}
+				pair := strings.Split(h, ":")
+				if len(pair) == 2 {
+					if strings.ToLower(pair[0]) == "authorization" && strings.Contains(pair[1], "Bearer") {
+						call.Auth = &app.Auth{Type: "bearer_token", Token: strings.TrimSpace(strings.ReplaceAll(pair[1], "Bearer", ""))}
+						continue
+					}
+				}
+				processed_headers = append(processed_headers, h)
+			}
+			call.Headers = processed_headers
 		}
 
 		viper.SetConfigName("config")         // name of config file (without extension)

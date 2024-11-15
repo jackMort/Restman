@@ -259,13 +259,18 @@ func (a *App) GetResponse(call *Call) tea.Cmd {
 		},
 		// fetch response
 		func() tea.Msg {
+			headers := make(map[string]string)
+			for _, h := range call.Headers {
+				header := strings.Split(h, ":")
+				if len(header) > 1 {
+					headers[header[0]] = header[1]
+				}
+			}
+
 			params := utils.HTTPRequestParams{
 				Method:  call.Method,
 				URL:     call.GetUrl(),
-				Headers: map[string]string{
-					// "Content-Type": "application/json",
-				},
-			}
+				Headers: headers}
 
 			if call.Data != "" {
 				params.Body = strings.NewReader(call.Data)
@@ -276,6 +281,8 @@ func (a *App) GetResponse(call *Call) tea.Cmd {
 				if auth.Type == "basic_auth" {
 					params.Username = auth.Username
 					params.Password = auth.Password
+				} else if auth.Type == "bearer_token" {
+					params.Headers["Authorization"] = fmt.Sprintf("Bearer %s", auth.Token)
 				}
 			}
 

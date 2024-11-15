@@ -20,7 +20,14 @@ var styleBase = lipgloss.NewStyle().
 	Bold(false).
 	BorderForeground(config.COLOR_SUBTLE)
 
+const (
+	view = iota
+	add
+	edit
+)
+
 type Model struct {
+	mode        int
 	width       int
 	height      int
 	simpleTable table.Model
@@ -49,6 +56,7 @@ func New(call *app.Call, width int, height int) Model {
 	}
 
 	return Model{
+		mode:   view,
 		call:   call,
 		width:  width,
 		height: height,
@@ -75,21 +83,29 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		{
 			switch msg.String() {
-			case "x":
-				key := strings.TrimSpace(m.simpleTable.HighlightedRow().Data[columnKeyKey].(string))
-				headers := []string{}
-				for _, header := range m.call.Headers {
-					if key != strings.Split(header, ":")[0] {
-						headers = append(headers, header)
-					}
-				}
-				m.call.Headers = headers
+			case "a":
+				if m.mode == view {
+					m.mode = add
 
-				cmd := func() tea.Msg {
-					return app.CallUpdatedMsg{Call: m.call}
 				}
-				m.simpleTable = m.simpleTable.WithRows(GetRows(m.call.Headers))
-				cmds = append(cmds, cmd)
+
+			case "x":
+				if m.call != nil && m.call.HeadersCount() > 0 {
+					key := strings.TrimSpace(m.simpleTable.HighlightedRow().Data[columnKeyKey].(string))
+					headers := []string{}
+					for _, header := range m.call.Headers {
+						if key != strings.Split(header, ":")[0] {
+							headers = append(headers, header)
+						}
+					}
+					m.call.Headers = headers
+
+					cmd := func() tea.Msg {
+						return app.CallUpdatedMsg{Call: m.call}
+					}
+					m.simpleTable = m.simpleTable.WithRows(GetRows(m.call.Headers))
+					cmds = append(cmds, cmd)
+				}
 			}
 		}
 	case app.CallUpdatedMsg:
@@ -104,6 +120,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
+	if m.mode == add {
+		return config.BoxHeader.Render("Add Header")
+	}
+
 	content := config.EmptyMessageStyle.Padding(2, 2).Render("No headers defined.")
 	if m.call != nil && len(m.call.Headers) > 0 {
 		content = m.simpleTable.View()
