@@ -44,6 +44,7 @@ func stripErr(n boxer.Node, _ error) boxer.Node {
 func main() {
 	rootCmd.Flags().StringP("url", "u", "", "Url")
 	rootCmd.Flags().StringP("data", "d", "", "Data")
+	rootCmd.Flags().StringP("data-raw", "", "", "Data Raw")
 	rootCmd.Flags().StringP("request", "X", "GET", "HTTP method")
 	rootCmd.Flags().StringArrayP("header", "H", []string{}, "HTTP header")
 

@@ -66,7 +66,16 @@ Restman is a CLI tool for RESTful API.`,
 		}
 
 		data, _ := cmd.Flags().GetString("data")
+		dataRaw, _ := cmd.Flags().GetString("data-raw")
 		call.Data = data
+		if call.Data == "" {
+			call.Data = dataRaw
+		}
+
+		// make sure the method is POST if data is provided
+		if call.Data != "" && call.Method == "GET" {
+			call.Method = "POST"
+		}
 
 		headers, _ := cmd.Flags().GetStringArray("header")
 		if headers != nil {
