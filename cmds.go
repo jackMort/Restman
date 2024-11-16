@@ -12,6 +12,7 @@ import (
 	"restman/components/request"
 	"restman/components/results"
 	"restman/components/url"
+	"restman/utils"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -72,6 +73,10 @@ Restman is a CLI tool for RESTful API.`,
 			call.Data = dataRaw
 		}
 
+		if call.Data != "" {
+			call.DataType = "Text"
+		}
+
 		// make sure the method is POST if data is provided
 		if call.Data != "" && call.Method == "GET" {
 			call.Method = "POST"
@@ -91,6 +96,11 @@ Restman is a CLI tool for RESTful API.`,
 					if strings.ToLower(pair[0]) == "authorization" && strings.Contains(pair[1], "Bearer") {
 						call.Auth = &app.Auth{Type: "bearer_token", Token: strings.TrimSpace(strings.ReplaceAll(pair[1], "Bearer", ""))}
 						continue
+					}
+
+					if strings.ToLower(pair[0]) == "content-type" && strings.Contains(pair[1], "application/json") {
+						call.DataType = "JSON"
+						call.Data = utils.FormatJSON(call.Data)
 					}
 				}
 				processed_headers = append(processed_headers, h)

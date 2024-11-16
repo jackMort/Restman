@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/json"
 	"regexp"
 	"strings"
 
@@ -46,4 +47,14 @@ var ansiReg = regexp.MustCompile(`\x1b\[[0-9;]*m`)
 
 func RemoveANSI(str string) string {
 	return ansiReg.ReplaceAllString(str, "")
+}
+
+func FormatJSON(value string) string {
+	var obj interface{}
+	json.Unmarshal([]byte(value), &obj)
+	if obj != nil {
+		s, _ := json.MarshalIndent(obj, "", "  ")
+		value = string(s)
+	}
+	return value
 }

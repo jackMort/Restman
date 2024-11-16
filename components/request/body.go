@@ -1,6 +1,7 @@
 package request
 
 import (
+	"restman/app"
 	"restman/components"
 	"restman/components/config"
 
@@ -12,20 +13,20 @@ import (
 const (
 	NONE = "None"
 	TEXT = "Text"
+	JSON = "JSON"
 )
 
-var OPTIONS = []string{NONE, TEXT}
+var OPTIONS = []string{NONE, TEXT, JSON}
 
 type BodyModel struct {
-	Body      string
-	width     int
-	height    int
-	textarea  textarea.Model
-	toggle    components.ToggleModel
-	body_type string
+	call     *app.Call
+	width    int
+	height   int
+	textarea textarea.Model
+	toggle   components.ToggleModel
 }
 
-func NewBody(body string, width int, height int) BodyModel {
+func NewBody(call *app.Call, width int, height int) BodyModel {
 
 	focusedStyle, blurredStyle := textarea.DefaultStyles()
 	focusedStyle.Base = lipgloss.
@@ -37,8 +38,14 @@ func NewBody(body string, width int, height int) BodyModel {
 		BorderBottom(false).
 		BorderTop(false)
 
+	data := ""
+	if call != nil {
+		data = call.Data
+	}
+
 	ti := textarea.New()
-	ti.SetValue(body)
+	ti.CharLimit = 0
+	ti.SetValue(data)
 	ti.SetWidth(width - 4)
 	ti.SetHeight(height - 4)
 	ti.Focus()
@@ -46,20 +53,20 @@ func NewBody(body string, width int, height int) BodyModel {
 	ti.FocusedStyle = focusedStyle
 	ti.BlurredStyle = blurredStyle
 
-	// TODO: change logic to add param body_type to Call
-	default_value := NONE
-	if body != "" {
-		default_value = TEXT
+	defaultValue := NONE
+	if call != nil {
+		if call.DataType != "" {
+			defaultValue = call.DataType
+		}
 	}
-	toggle := components.NewToggle("Body type", OPTIONS, default_value)
+	toggle := components.NewToggle("Body type", OPTIONS, defaultValue)
 
 	return BodyModel{
-		width:     width,
-		height:    height,
-		Body:      body,
-		textarea:  ti,
-		toggle:    toggle,
-		body_type: default_value,
+		width:    width,
+		height:   height,
+		call:     call,
+		textarea: ti,
+		toggle:   toggle,
 	}
 }
 
@@ -74,7 +81,11 @@ func (m BodyModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case components.OptionSelectedMsg:
 		if msg.Id == m.toggle.Id {
-			m.body_type = msg.Selected
+			if m.call != nil {
+				m.call.DataType = msg.Selected
+				m.call.Data = ""
+				m.textarea.SetValue("")
+			}
 		}
 	case tea.KeyMsg:
 		switch msg.Type {
@@ -82,8 +93,6 @@ func (m BodyModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.textarea.Focused() {
 				m.textarea.Blur()
 			}
-		case tea.KeyCtrlC:
-			return m, tea.Quit
 		default:
 			if !m.textarea.Focused() {
 				cmd = m.textarea.Focus()
@@ -102,7 +111,7 @@ func (m BodyModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m BodyModel) View() string {
 	content := m.textarea.View()
-	if m.body_type == NONE {
+	if m.call == nil || m.call.DataType == NONE {
 		content = config.EmptyMessageStyle.Render("No body")
 	}
 

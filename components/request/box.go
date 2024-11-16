@@ -76,11 +76,7 @@ func (b Request) GetContent() tea.Model {
 	} else if b.activeTab == 2 {
 		return auth.New(b.width, b.call)
 	} else if b.activeTab == 3 {
-		body := ""
-		if b.call != nil {
-			body = b.call.Data
-		}
-		return NewBody(body, b.width-2, b.height-4)
+		return NewBody(b.call, b.width-2, b.height-4)
 	}
 	return nil
 }
@@ -146,7 +142,7 @@ func (b Request) View() string {
 		tabGap = tabGap.BorderForeground(config.COLOR_SUBTLE)
 	}
 
-	tabNames := ""
+	tabSize := 22
 	for i, t := range b.Tabs {
 		var style lipgloss.Style
 		isFirst, isActive := i == 0, i == b.activeTab
@@ -168,17 +164,20 @@ func (b Request) View() string {
 			if b.call != nil {
 				if b.call.ParamsCount() > 0 {
 					counterSign = strconv.Itoa(b.call.ParamsCount())
+					tabSize += len(counterSign) + 1
 				}
 			}
 		} else if i == 1 {
 			if b.call != nil {
 				if b.call.HeadersCount() > 0 {
 					counterSign = strconv.Itoa(b.call.HeadersCount())
+					tabSize += len(counterSign) + 1
 				}
 			}
 		} else if i == 2 {
 			if b.call != nil && b.call.Auth != nil {
 				counterSign = "󱐋"
+				tabSize += 2
 			}
 		} else if i == 3 {
 			counterSign = ""
@@ -189,11 +188,17 @@ func (b Request) View() string {
 		}
 
 		style = style.Border(border)
-		tabName := style.Render(t + " " + counter)
+		toRender := t
+		if counterSign != "" {
+			toRender += " " + counter
+		}
+		tabName := style.Render(toRender)
 		renderedTabs = append(renderedTabs, zone.Mark("tab_"+t, tabName))
-		tabNames += strings.TrimSpace(t + " " + counterSign)
+
+		tabSize += len(t)
 	}
-	renderedTabs = append(renderedTabs, tabGap.Render(strings.Repeat(" ", b.width-len(tabNames)-21)))
+
+	renderedTabs = append(renderedTabs, tabGap.Render(strings.Repeat(" ", b.width-tabSize)))
 
 	windowStyle = windowStyle.Height(b.height - 4)
 
