@@ -48,6 +48,26 @@ func main() {
 	rootCmd.Flags().StringP("request", "X", "GET", "HTTP method")
 	rootCmd.Flags().StringArrayP("header", "H", []string{}, "HTTP header")
 
+	//NOTE: not supported
+	rootCmd.Flags().StringP("output", "o", "", "Write output to <file> instead of stdout")
+	rootCmd.Flags().BoolP("verbose", "v", false, "Make the operation more talkative")
+	rootCmd.Flags().BoolP("silent", "s", false, "Silent mode")
+	rootCmd.Flags().BoolP("location", "L", false, "Follow redirects")
+	rootCmd.Flags().StringP("user", "U", "", "Server user and password")
+	rootCmd.Flags().StringP("proxy", "x", "", "Use proxy on given port")
+	rootCmd.Flags().BoolP("insecure", "k", false, "Allow insecure server connections when using SSL")
+	rootCmd.Flags().StringP("cookie", "b", "", "Send cookies from string/file")
+	rootCmd.Flags().StringP("cookie-jar", "c", "", "Write cookies to <file> after operation")
+	rootCmd.Flags().StringP("cert", "", "", "Client certificate file and password")
+	rootCmd.Flags().StringP("key", "", "", "Private key file name")
+	rootCmd.Flags().StringP("cacert", "", "", "CA certificate to verify peer against")
+	rootCmd.Flags().StringP("capath", "", "", "CA directory to verify peer against")
+	rootCmd.Flags().StringP("connect-timeout", "", "", "Maximum time allowed for connection")
+	rootCmd.Flags().StringP("max-time", "", "", "Maximum time allowed for the transfer")
+	rootCmd.Flags().BoolP("compressed", "", false, "Request compressed response")
+	rootCmd.Flags().StringP("user-agent", "", "", "Send User-Agent <name> to server")
+	rootCmd.Flags().StringP("referer", "", "", "Send Referer <URL> to server")
+
 	rootCmd.Execute()
 }
 
