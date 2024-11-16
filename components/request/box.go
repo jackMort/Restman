@@ -177,7 +177,9 @@ func (b Request) View() string {
 				}
 			}
 		} else if i == 2 {
-			counterSign = "󱐋"
+			if b.call != nil && b.call.Auth != nil {
+				counterSign = "󱐋"
+			}
 		} else if i == 3 {
 			counterSign = ""
 		}
@@ -189,9 +191,9 @@ func (b Request) View() string {
 		style = style.Border(border)
 		tabName := style.Render(t + " " + counter)
 		renderedTabs = append(renderedTabs, zone.Mark("tab_"+t, tabName))
-		tabNames += t + " " + counterSign + "    "
+		tabNames += strings.TrimSpace(t + " " + counterSign)
 	}
-	renderedTabs = append(renderedTabs, tabGap.Render(strings.Repeat(" ", b.width-len(tabNames)-3)))
+	renderedTabs = append(renderedTabs, tabGap.Render(strings.Repeat(" ", b.width-len(tabNames)-21)))
 
 	windowStyle = windowStyle.Height(b.height - 4)
 
