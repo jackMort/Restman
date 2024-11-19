@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/TylerBrock/colorjson"
+	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -33,12 +34,17 @@ type Results struct {
 	content   tea.Model
 	call      *app.Call
 	status    int
+	isLoading bool
+	spinner   spinner.Model
 }
 
 func New() Results {
+	s := spinner.New()
+	s.Spinner = spinner.Points
 	return Results{
-		title: "Results",
-		Tabs:  []string{"Response", "Headers", "Cookies", "Statistics"},
+		title:   "Results",
+		Tabs:    []string{"Response", "Headers", "Cookies", "Statistics"},
+		spinner: s,
 	}
 }
 
@@ -50,12 +56,24 @@ func (b Results) Init() tea.Cmd {
 }
 
 func (b Results) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+
+	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 
 	case app.CallSelectedMsg:
+		b.body = ""
 		b.call = msg.Call
 
+	case app.OnLoadingMsg:
+		b.body = ""
+		b.status = 0
+		b.call = nil
+		b.isLoading = true
+		cmd := b.spinner.Tick
+		cmds = append(cmds, cmd)
+
 	case app.OnResponseMsg:
+		b.isLoading = false
 		if msg.Body != "" {
 			f := colorjson.NewFormatter()
 			f.Indent = 2
@@ -99,8 +117,12 @@ func (b Results) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case config.WindowFocusedMsg:
 		b.focused = msg.State
 
+	case spinner.TickMsg:
+		var cmd tea.Cmd
+		b.spinner, cmd = b.spinner.Update(msg)
+		cmds = append(cmds, cmd)
+
 	}
-	var cmds []tea.Cmd
 	var cmd tea.Cmd
 	b.viewport, cmd = b.viewport.Update(msg)
 	cmds = append(cmds, cmd)
@@ -140,10 +162,14 @@ func (b Results) View() string {
   \/_/_/
 `
 
+		text := "Not sent yet"
+		if b.isLoading {
+			text = lipgloss.NewStyle().Foreground(config.COLOR_WHITE).Render(b.spinner.View() + " Loading please wait...")
+		}
 		message := lipgloss.JoinVertical(
 			lipgloss.Center,
 			lipgloss.NewStyle().Foreground(config.COLOR_HIGHLIGHT).Render(icon),
-			"Not sent yet")
+			text)
 
 		center := lipgloss.PlaceHorizontal(b.viewport.Width, lipgloss.Center, message)
 		content = lipgloss.NewStyle().
