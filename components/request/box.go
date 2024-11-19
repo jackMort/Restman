@@ -175,12 +175,15 @@ func (b Request) View() string {
 				}
 			}
 		} else if i == 2 {
-			if b.call != nil && b.call.Auth != nil {
+			if b.call != nil && b.call.Auth != nil && b.call.Auth.Type != "none" {
 				counterSign = "󱐋"
 				tabSize += 2
 			}
 		} else if i == 3 {
-			counterSign = ""
+			if b.call != nil && b.call.DataType != "None" && b.call.DataType != "" {
+				counterSign = ""
+				tabSize += 2
+			}
 		}
 
 		if counterSign != "" {
