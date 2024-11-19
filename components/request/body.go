@@ -1,9 +1,12 @@
 package request
 
 import (
+	"fmt"
+	"os"
 	"restman/app"
 	"restman/components"
 	"restman/components/config"
+	"restman/utils"
 
 	"github.com/charmbracelet/bubbles/textarea"
 	tea "github.com/charmbracelet/bubbletea"
@@ -93,6 +96,20 @@ func (m BodyModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.textarea.Focused() {
 				m.textarea.Blur()
 			}
+		case tea.KeyCtrlE:
+			extension := "txt"
+			if m.call != nil && m.call.DataType == JSON {
+				extension = "json"
+			}
+			value, err := utils.OpenInEditor(m.textarea.Value(), extension)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, "Error:", err)
+			} else {
+				m.textarea.SetValue(value)
+				// force redraw all app
+				cmds = append(cmds, tea.WindowSize())
+			}
+
 		default:
 			if !m.textarea.Focused() {
 				cmd = m.textarea.Focus()
