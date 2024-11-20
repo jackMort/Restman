@@ -167,7 +167,7 @@ Restman is a CLI tool for RESTful API.`,
 		// middle Node
 		middleNode := boxer.CreateNoBorderNode()
 		middleNode.SizeFunc = func(node boxer.Node, widthOrHeight int) []int {
-			gap := 30
+			gap := widthOrHeight / 5
 			if m.tui.ModelMap["collections"].(collections.Collections).IsMinified() {
 				gap = 6
 			}

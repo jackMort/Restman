@@ -76,6 +76,12 @@ func (m Collections) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case app.CollectionSelectedMsg:
 		m.collection = msg.Collection
+		if m.collection != nil {
+			newSModel, cmd2 := m.smod.Update(msg)
+			m.smod = newSModel.(callModel)
+
+			cmds = append(cmds, cmd2)
+		}
 
 	case config.WindowFocusedMsg:
 		m.focused = msg.State
@@ -125,22 +131,11 @@ func (m Collections) View() string {
 
 	// if the collection is minified, render the minified version
 	if m.minified {
-		return zone.Mark("collections_minified", style.Render(" \n\nC\nO\nL\nL\nE\nC\nT\nI\nO\nN\nS"))
+		return zone.Mark("collections_minified", style.Render(" \n\nC\nO\nL\nL\nE\nC\nT\nI\nO\nN\nS"))
 	}
 
 	if m.collection != nil {
-		header := config.BoxHeader.MaxWidth(25).
-			Render("󰅁 " + m.collection.Name)
-		description := config.BoxDescription.MaxWidth(25).
-			Render(m.collection.BaseUrl)
-
-		content := lipgloss.JoinVertical(
-			lipgloss.Left,
-			header,
-			description,
-			m.smod.View(),
-		)
-		return zone.Mark("collections", style.Render(content))
+		return zone.Mark("collections", style.Render(m.smod.View()))
 	}
 
 	return zone.Mark("collections", style.Render(m.mod.View()))

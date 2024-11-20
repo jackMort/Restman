@@ -79,7 +79,7 @@ func newDelegateKeyMap() *delegateKeyMap {
 			key.WithHelp("enter", "choose"),
 		),
 		remove: key.NewBinding(
-			key.WithKeys("x", "backspace"),
+			key.WithKeys("x"),
 			key.WithHelp("x", "delete"),
 		),
 	}

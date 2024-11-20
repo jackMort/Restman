@@ -1,14 +1,12 @@
 package collections
 
 import (
-	"restman/app"
-	"restman/components/config"
-
-	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	zone "github.com/lrstanley/bubblezone"
+	"restman/app"
+	"restman/components/config"
 )
 
 var (
@@ -17,61 +15,17 @@ var (
 	titleStyle = lipgloss.NewStyle().
 			BorderForeground(config.COLOR_SUBTLE)
 
-	titleBarStyle = lipgloss.NewStyle().PaddingBottom(1)
+	titleBarStyle = lipgloss.NewStyle()
 )
-
-type listKeyMap struct {
-	esc              key.Binding
-	toggleSpinner    key.Binding
-	toggleTitleBar   key.Binding
-	toggleStatusBar  key.Binding
-	togglePagination key.Binding
-	toggleHelpMenu   key.Binding
-	insertItem       key.Binding
-}
-
-func newListKeyMap() *listKeyMap {
-	return &listKeyMap{
-		esc: key.NewBinding(
-			key.WithKeys("esc"),
-		),
-		insertItem: key.NewBinding(
-			key.WithKeys("a"),
-			key.WithHelp("a", "add item"),
-		),
-		toggleSpinner: key.NewBinding(
-			key.WithKeys("s"),
-			key.WithHelp("s", "toggle spinner"),
-		),
-		toggleTitleBar: key.NewBinding(
-			key.WithKeys("T"),
-			key.WithHelp("T", "toggle title"),
-		),
-		toggleStatusBar: key.NewBinding(
-			key.WithKeys("S"),
-			key.WithHelp("S", "toggle status"),
-		),
-		togglePagination: key.NewBinding(
-			key.WithKeys("P"),
-			key.WithHelp("P", "toggle pagination"),
-		),
-		toggleHelpMenu: key.NewBinding(
-			key.WithKeys("H"),
-			key.WithHelp("H", "toggle help"),
-		),
-	}
-}
 
 type model struct {
 	list         list.Model
-	keys         *listKeyMap
 	delegateKeys *delegateKeyMap
 }
 
 func NewModel() model {
 	var (
 		delegateKeys = newDelegateKeyMap()
-		listKeys     = newListKeyMap()
 	)
 
 	// Make initial list of items
@@ -79,28 +33,17 @@ func NewModel() model {
 
 	// Setup list
 	delegate := newItemDelegate(delegateKeys)
-	groceryList := list.New(items, delegate, 0, 0)
-	groceryList.Title = zone.Mark("collections_minify", "  Collections")
-	groceryList.Styles.Title = titleStyle
-	groceryList.Styles.TitleBar = titleBarStyle
-	groceryList.Help.ShowAll = true
-	groceryList.AdditionalFullHelpKeys = func() []key.Binding {
-		return []key.Binding{
-			listKeys.toggleSpinner,
-			listKeys.insertItem,
-			listKeys.toggleTitleBar,
-			listKeys.toggleStatusBar,
-			listKeys.togglePagination,
-			listKeys.toggleHelpMenu,
-		}
-	}
+	collectionsList := list.New(items, delegate, 0, 0)
+	collectionsList.Title = zone.Mark("collections_minify", " My Collections")
+	collectionsList.Styles.Title = titleStyle
+	collectionsList.Styles.TitleBar = titleBarStyle
 
-	groceryList.SetShowHelp(false)
-	groceryList.SetShowStatusBar(false)
+	collectionsList.SetStatusBarItemName("collection", "collections")
+	collectionsList.DisableQuitKeybindings()
+	collectionsList.SetShowHelp(false)
 
 	return model{
-		list:         groceryList,
-		keys:         listKeys,
+		list:         collectionsList,
 		delegateKeys: delegateKeys,
 	}
 }
@@ -121,43 +64,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.list.SetItems(items)
 
 	case tea.WindowSizeMsg:
-		h, v := appStyle.GetFrameSize()
-		m.list.SetSize(msg.Width-h-4, msg.Height-v-3)
+		x, y := appStyle.GetFrameSize()
+		m.list.SetSize(msg.Width-x-4, msg.Height-y-2)
 
 	case tea.KeyMsg:
 
 		if m.list.FilterState() == list.Filtering {
 			break
 		}
-
-		switch {
-		case key.Matches(msg, m.keys.esc):
-			// do nothing
-			return m, nil
-		case key.Matches(msg, m.keys.toggleSpinner):
-			cmd := m.list.ToggleSpinner()
-			return m, cmd
-
-		case key.Matches(msg, m.keys.toggleTitleBar):
-			v := !m.list.ShowTitle()
-			m.list.SetShowTitle(v)
-			m.list.SetShowFilter(v)
-			m.list.SetFilteringEnabled(v)
-			return m, nil
-
-		case key.Matches(msg, m.keys.toggleStatusBar):
-			m.list.SetShowStatusBar(!m.list.ShowStatusBar())
-			return m, nil
-
-		case key.Matches(msg, m.keys.togglePagination):
-			m.list.SetShowPagination(!m.list.ShowPagination())
-			return m, nil
-
-		case key.Matches(msg, m.keys.toggleHelpMenu):
-			m.list.SetShowHelp(!m.list.ShowHelp())
-			return m, nil
-		}
-
 	}
 
 	// This will also call our delegate's update function.

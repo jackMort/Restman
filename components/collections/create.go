@@ -141,7 +141,7 @@ func (c Create) View() string {
 		lipgloss.JoinHorizontal(lipgloss.Right, okButton, " ", cancelButton),
 	)
 
-	header := config.BoxHeader.Render("Create collection")
+	header := config.BoxHeader.Render(" Create collection")
 
 	inputs := lipgloss.JoinVertical(
 		lipgloss.Left,
