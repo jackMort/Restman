@@ -50,6 +50,7 @@ type Model struct {
 	focused int
 	method  string
 	call    *app.Call
+	width   int
 }
 
 func New(width int, call *app.Call) Model {
@@ -102,6 +103,7 @@ func New(width int, call *app.Call) Model {
 		focused: 0,
 		method:  method,
 		call:    call,
+		width:   width,
 	}
 }
 
@@ -194,7 +196,7 @@ func (c Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case tea.KeyCtrlT:
 			// cycle over methods
-			c.nextMethod()
+			return c, c.nextMethod()
 
 		case tea.KeyEnter:
 			c.nextInput()
@@ -259,7 +261,12 @@ func (c Model) View() string {
 	var inputs string
 	switch c.method {
 	case INHERIT:
-		inputs = config.EmptyMessageStyle.Render("Inherited from collection")
+		if c.call == nil || c.call.Collection() == nil {
+			inputs = config.EmptyMessageStyle.Width(c.width - 8).Render("Please save this request in any collection to inherit the authorization")
+		} else {
+
+			inputs = config.EmptyMessageStyle.Render("Inherited from collection")
+		}
 	case BASIC_AUTH:
 		inputs = lipgloss.JoinVertical(
 			lipgloss.Left,
