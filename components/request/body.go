@@ -92,6 +92,9 @@ func (m BodyModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case tea.KeyMsg:
 		switch msg.Type {
+		case tea.KeyCtrlT:
+			return m, m.toggle.Next()
+
 		case tea.KeyEsc:
 			if m.textarea.Focused() {
 				m.textarea.Blur()
