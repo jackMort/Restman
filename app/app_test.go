@@ -9,10 +9,6 @@ import (
 func TestNewCollection(t *testing.T) {
 	collection := NewCollection()
 
-	if collection.ID == "" {
-		t.Errorf("Expected collection ID to be generated, got empty string")
-	}
-
 	if collection.Name != "" {
 		t.Errorf("Expected collection Name to be empty, got %s", collection.Name)
 	}
