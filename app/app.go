@@ -47,7 +47,52 @@ func (i Collection) Description() string {
 	}
 	return " "
 }
+
 func (i Collection) FilterValue() string { return i.Name }
+
+func (i *Collection) ValidatePartial(fields ...string) []string {
+	var errors []string
+
+	for _, field := range fields {
+		switch field {
+		case "name":
+			if i.Name == "" {
+				errors = append(errors, "Name is required")
+			}
+		case "baseUrl":
+			if i.BaseUrl != "" {
+				_, err := url.ParseRequestURI(i.BaseUrl)
+				if err != nil {
+					errors = append(errors, "Base URL is not valid")
+				}
+			}
+		case "auth":
+			if i.Auth != nil {
+				if i.Auth.Type == "basic_auth" {
+					if i.Auth.Username == "" {
+						errors = append(errors, "Username is required")
+					}
+					if i.Auth.Password == "" {
+						errors = append(errors, "Password is required")
+					}
+				} else if i.Auth.Type == "bearer_token" {
+					if i.Auth.Token == "" {
+						errors = append(errors, "Token is required")
+					}
+				} else if i.Auth.Type == "api_key" {
+					if i.Auth.HeaderName == "" {
+						errors = append(errors, "Header name is required")
+					}
+					if i.Auth.HeaderValue == "" {
+						errors = append(errors, "Header value is required")
+					}
+				}
+			}
+		}
+	}
+
+	return errors
+}
 
 type Call struct {
 	ID       string   `json:"id"`
@@ -299,11 +344,7 @@ func (a *App) GetResponse(call *Call) tea.Cmd {
 		})
 }
 
-func (a *App) CreateCollection(title string, url string) tea.Cmd {
-	collection := NewCollection()
-	collection.Name = title
-	collection.BaseUrl = url
-
+func (a *App) CreateCollection(collection Collection) tea.Cmd {
 	return func() tea.Msg {
 		configDir, _ := os.UserConfigDir()
 		a.Collections = append(a.Collections, collection)
