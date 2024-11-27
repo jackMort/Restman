@@ -1,7 +1,6 @@
 package request
 
 import (
-	"fmt"
 	"os"
 	"restman/app"
 	"restman/components"
@@ -18,6 +17,11 @@ const (
 	TEXT = "Text"
 	JSON = "JSON"
 )
+
+type editorFinishedMsg struct {
+	file *os.File
+	err  error
+}
 
 var OPTIONS = []string{NONE, TEXT, JSON}
 
@@ -82,6 +86,13 @@ func (m BodyModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
+
+	case editorFinishedMsg:
+		// TODO: handle error
+		content, _ := os.ReadFile(msg.file.Name())
+		m.textarea.SetValue(string(content))
+		utils.RemoveTempFile(msg.file)
+
 	case components.OptionSelectedMsg:
 		if msg.Id == m.toggle.Id {
 			if m.call != nil {
@@ -104,14 +115,11 @@ func (m BodyModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.call != nil && m.call.DataType == JSON {
 				extension = "json"
 			}
-			value, err := utils.OpenInEditor(m.textarea.Value(), extension)
-			if err != nil {
-				fmt.Fprintln(os.Stderr, "Error:", err)
-			} else {
-				m.textarea.SetValue(value)
-				// force redraw all app
-				cmds = append(cmds, tea.WindowSize())
-			}
+			// TODO: handle error
+			tmpFile, _ := utils.CreateTempFile(m.textarea.Value(), extension)
+			return m, tea.ExecProcess(utils.OpenInEditorCommand(tmpFile), func(err error) tea.Msg {
+				return editorFinishedMsg{tmpFile, err}
+			})
 
 		default:
 			if !m.textarea.Focused() {

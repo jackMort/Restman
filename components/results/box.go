@@ -112,8 +112,14 @@ func (b Results) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "ctrl+h":
 			b.activeTab = max(b.activeTab-1, 0)
-		}
+		case "ctrl+e":
+			if b.body != "" {
+				extension := "json"
+				tmpFile, _ := utils.CreateTempFile(string(b.body), extension)
+				return b, tea.ExecProcess(utils.OpenInEditorCommand(tmpFile), nil)
+			}
 
+		}
 	case config.WindowFocusedMsg:
 		b.focused = msg.State
 
