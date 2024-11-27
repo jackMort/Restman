@@ -21,8 +21,8 @@ type SetStepMsg struct {
 	Step int
 }
 
-// Create is a popup that presents a yes/no choice to the user.
-type Create struct {
+// Form is a popup that presents a yes/no choice to the user.
+type Form struct {
 	overlay      popup.Overlay
 	current_step int
 	bgRaw        string
@@ -31,9 +31,8 @@ type Create struct {
 	authenticationStep Authentication
 }
 
-func NewCreate(bgRaw string, width int) Create {
-	collection := app.NewCollection()
-	return Create{
+func NewForm(collection app.Collection, bgRaw string, width int) Form {
+	return Form{
 		bgRaw:              bgRaw,
 		overlay:            popup.NewOverlay(bgRaw, width, 13),
 		current_step:       0,
@@ -42,48 +41,11 @@ func NewCreate(bgRaw string, width int) Create {
 	}
 }
 
-func (c Create) Init() tea.Cmd {
+func (c Form) Init() tea.Cmd {
 	return nil
 }
 
-// Update handles messages.
-// func (c Create) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-// 	if msg, ok := msg.(tea.KeyMsg); ok {
-// 		switch msg.Type {
-// 		case tea.KeyCtrlC, tea.KeyEsc:
-// 			return c, c.makeChoice()
-// 		case tea.KeyEnter:
-// 			if c.focused == c.GetNumberOfInputs()-1 {
-// 				if c.current_step < 1 {
-// 					c.current_step++
-// 					c.focused = 0
-// 				}
-// 			} else if c.focused == c.GetNumberOfInputs()-2 {
-// 				if c.current_step > 0 {
-// 					c.current_step--
-// 					c.focused = 0
-// 				}
-// 			}
-// 			c.steps.Current = c.current_step
-// 			c.content = c.getStepComponent()
-// 		case tea.KeyShiftTab, tea.KeyCtrlP:
-// 			return c, c.prevInput()
-// 		case tea.KeyTab, tea.KeyCtrlN:
-// 			return c, c.nextInput()
-// 		}
-// 	}
-// 	// update the current step
-// 	content, _ := c.content.Update(msg)
-// 	c.content = content.(Step)
-//
-// 	// update the steps
-// 	steps, _ := c.steps.Update(msg)
-// 	c.steps = steps.(Steps)
-//
-// 	return c, nil
-// }
-
-func (c Create) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (c Form) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
@@ -120,7 +82,7 @@ func (c Create) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return c, tea.Batch(cmds...)
 }
 
-func (c Create) View() string {
+func (c Form) View() string {
 	var formView string
 	if c.current_step == 0 {
 		formView = c.basicInfoStep.View()
@@ -136,6 +98,6 @@ func (c Create) View() string {
 	return overlay.PlaceOverlay(startCol, startRow, content, c.bgRaw)
 }
 
-func (c Create) makeChoice() tea.Cmd {
+func (c Form) makeChoice() tea.Cmd {
 	return func() tea.Msg { return CreateResultMsg{false} }
 }

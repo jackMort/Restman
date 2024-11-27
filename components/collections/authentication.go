@@ -26,17 +26,34 @@ type Authentication struct {
 	numberOfInputs int
 	collection     *app.Collection
 	errors         []string
+	mode           string
 }
 
 func NewAuthentication(collection *app.Collection) Authentication {
-	return Authentication{
+	mode := "Create"
+	okText := "Create"
+	if collection.ID != "" {
+		mode = "Edit"
+		okText = "Save"
+	}
+
+	method := NONE
+	if collection.Auth != nil {
+		method = collection.Auth.Type
+	}
+
+	auth := Authentication{
+		mode:           mode,
 		inputs:         make([]textinput.Model, 0),
 		focused:        1,
-		method:         NONE,
+		method:         method,
 		numberOfInputs: 0,
-		footer:         Footer{CancelText: "Back", OkText: "Create", Width: 70},
+		footer:         Footer{CancelText: "Back", OkText: okText, Width: 70},
 		collection:     collection,
 	}
+	auth.setBasedOnMethod()
+
+	return auth
 }
 
 // Init initializes the popup.
@@ -44,54 +61,73 @@ func (c Authentication) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (c *Authentication) nextMethod() {
+func (c *Authentication) setBasedOnMethod() {
+	username := ""
+	password := ""
+	headerName := ""
+	headerValue := ""
+	bearerToken := ""
+	if c.collection.Auth != nil {
+		username = c.collection.Auth.Username
+		password = c.collection.Auth.Password
+		headerName = c.collection.Auth.HeaderName
+		headerValue = c.collection.Auth.HeaderValue
+		bearerToken = c.collection.Auth.Token
+
+	}
+
 	switch c.method {
 	case NONE:
-
+		c.inputs = make([]textinput.Model, 0)
+		c.focused = 1
+	case BASIC_AUTH:
 		c.inputs = make([]textinput.Model, 2)
 		c.inputs[0] = textinput.New()
 		c.inputs[0].Placeholder = "username"
 		c.inputs[0].Prompt = "  "
+		c.inputs[0].SetValue(username)
 
 		c.inputs[1] = textinput.New()
 		c.inputs[1].Placeholder = "password"
 		c.inputs[1].Prompt = "󰌆  "
-
-		c.method = BASIC_AUTH
+		c.inputs[1].SetValue(password)
 		c.focused = 0
-	case BASIC_AUTH:
-
+	case BEARER_TOKEN:
 		c.inputs = make([]textinput.Model, 1)
 		c.inputs[0] = textinput.New()
 		c.inputs[0].Placeholder = "token"
 		c.inputs[0].Prompt = "󰌆  "
-
-		c.method = BEARER_TOKEN
+		c.inputs[0].SetValue(bearerToken)
 		c.focused = 0
-	case BEARER_TOKEN:
-
+	case API_KEY:
 		c.inputs = make([]textinput.Model, 2)
-
 		c.inputs[0] = textinput.New()
 		c.inputs[0].Placeholder = "header name"
 		c.inputs[0].Focus()
 		c.inputs[0].Prompt = "  "
+		c.inputs[0].SetValue(headerName)
 
 		c.inputs[1] = textinput.New()
 		c.inputs[1].Placeholder = "value"
 		c.inputs[1].Prompt = "󰌆  "
-
-		c.method = API_KEY
+		c.inputs[1].SetValue(headerValue)
 		c.focused = 0
-	case API_KEY:
-		c.inputs = make([]textinput.Model, 0)
-
-		c.method = NONE
-		// make ok button focused
-		c.focused = 1
 	}
-
 	c.numberOfInputs = len(c.inputs)
+}
+
+func (c *Authentication) nextMethod() {
+	switch c.method {
+	case NONE:
+		c.method = BASIC_AUTH
+	case BASIC_AUTH:
+		c.method = BEARER_TOKEN
+	case BEARER_TOKEN:
+		c.method = API_KEY
+	case API_KEY:
+		c.method = NONE
+	}
+	c.setBasedOnMethod()
 }
 
 // Update handles messages.
@@ -114,9 +150,17 @@ func (c Authentication) Update(msg tea.Msg) (Authentication, tea.Cmd) {
 			} else if c.focused == numOfInputs-1 {
 				c.errors = c.collection.ValidatePartial("name", "baseUrl", "auth")
 				if len(c.errors) == 0 {
-					return c, tea.Batch(
-						app.GetInstance().CreateCollection(*c.collection),
-						func() tea.Msg { return CreateResultMsg{false} })
+					// TODO: refacor to use this logic in app.GetInstance().SaveCollection()
+					//       and get rid of edit/create.go
+					if c.mode == "Create" {
+						return c, tea.Batch(
+							app.GetInstance().CreateCollection(*c.collection),
+							func() tea.Msg { return CreateResultMsg{false} })
+					} else {
+						return c, tea.Batch(
+							app.GetInstance().UpdateCollection(*c.collection),
+							func() tea.Msg { return CreateResultMsg{false} })
+					}
 				}
 			}
 
@@ -223,7 +267,7 @@ func (c Authentication) View() string {
 
 	}
 
-	header := Header{Steps{Current: 1}}
+	header := Header{Steps{Current: 1}, c.mode}
 
 	return lipgloss.JoinVertical(
 		lipgloss.Left,

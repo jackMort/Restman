@@ -337,8 +337,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// ----------------------------
 
 	switch msg := msg.(type) {
+
 	case app.SetFocusMsg:
 		m.SetFocused(msg.Item)
+
+	case app.CollectionEditMsg:
+		m.popup = collections.NewForm(*msg.Collection, m.GetFadedView(), 70)
+		return m, m.popup.Init()
 
 	case tea.KeyMsg:
 		{
@@ -358,7 +363,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, m.popup.Init()
 
 			case "ctrl+n":
-				m.popup = collections.NewCreate(m.GetFadedView(), utils.MinInt(70, 100))
+				m.popup = collections.NewForm(app.NewCollection(), m.GetFadedView(), 70)
 				return m, m.popup.Init()
 
 			case "ctrl+a":

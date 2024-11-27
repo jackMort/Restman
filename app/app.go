@@ -35,7 +35,6 @@ type Collection struct {
 
 func NewCollection() Collection {
 	return Collection{
-		ID:    uuid.NewString(),
 		Calls: []Call{},
 	}
 }
@@ -345,6 +344,7 @@ func (a *App) GetResponse(call *Call) tea.Cmd {
 }
 
 func (a *App) CreateCollection(collection Collection) tea.Cmd {
+	collection.ID = uuid.NewString()
 	return func() tea.Msg {
 		configDir, _ := os.UserConfigDir()
 		a.Collections = append(a.Collections, collection)
@@ -354,6 +354,18 @@ func (a *App) CreateCollection(collection Collection) tea.Cmd {
 
 		return FetchCollectionsSuccessMsg{Collections: a.Collections}
 	}
+}
+
+func (a *App) UpdateCollection(collection Collection) tea.Cmd {
+	for i, c := range a.Collections {
+		if c.ID == collection.ID {
+			a.Collections[i] = collection
+		}
+	}
+
+	return tea.Batch(
+		a.SaveCollections(),
+	)
 }
 
 // TODO refactor

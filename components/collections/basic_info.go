@@ -33,6 +33,7 @@ const NUM_OF_INPUTS = 4
 
 // Create is a popup that presents a yes/no choice to the user.
 type BasicInfo struct {
+	mode       string
 	focused    int
 	err        error
 	footer     Footer
@@ -48,12 +49,20 @@ func NewBasicInfo(collection *app.Collection) BasicInfo {
 	inputs[TITLE_IDX].Placeholder = "My Collection"
 	inputs[TITLE_IDX].Focus()
 	inputs[TITLE_IDX].Prompt = ""
+	inputs[TITLE_IDX].SetValue(collection.Name)
 
 	inputs[BASE_URL_IDX] = textinput.New()
 	inputs[BASE_URL_IDX].Placeholder = "https://sampleapi.com/api/v1"
 	inputs[BASE_URL_IDX].Prompt = ""
+	inputs[BASE_URL_IDX].SetValue(collection.BaseUrl)
+
+	mode := "Create"
+	if collection.ID != "" {
+		mode = "Edit"
+	}
 
 	return BasicInfo{
+		mode:       mode,
 		focused:    0,
 		inputs:     inputs,
 		collection: collection,
@@ -133,7 +142,7 @@ func (c BasicInfo) View() string {
 		" ",
 	)
 
-	header := Header{Steps{Current: 0}}
+	header := Header{Steps{Current: 0}, c.mode}
 
 	return lipgloss.JoinVertical(
 		lipgloss.Left,

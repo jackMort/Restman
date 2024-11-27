@@ -28,6 +28,11 @@ func newItemDelegate(keys *delegateKeyMap) list.DefaultDelegate {
 				}
 				// TODO: ask for confirmation
 				return app.GetInstance().RemoveCollection(i)
+
+			case key.Matches(msg, keys.edit):
+				return func() tea.Msg {
+					return app.CollectionEditMsg{Collection: &i}
+				}
 			}
 		}
 
@@ -50,6 +55,7 @@ func newItemDelegate(keys *delegateKeyMap) list.DefaultDelegate {
 type delegateKeyMap struct {
 	choose key.Binding
 	remove key.Binding
+	edit   key.Binding
 }
 
 // Additional short help entries. This satisfies the help.KeyMap interface and
@@ -58,6 +64,7 @@ func (d delegateKeyMap) ShortHelp() []key.Binding {
 	return []key.Binding{
 		d.choose,
 		d.remove,
+		d.edit,
 	}
 }
 
@@ -68,6 +75,7 @@ func (d delegateKeyMap) FullHelp() [][]key.Binding {
 		{
 			d.choose,
 			d.remove,
+			d.edit,
 		},
 	}
 }
@@ -81,6 +89,10 @@ func newDelegateKeyMap() *delegateKeyMap {
 		remove: key.NewBinding(
 			key.WithKeys("x"),
 			key.WithHelp("x", "delete"),
+		),
+		edit: key.NewBinding(
+			key.WithKeys("e"),
+			key.WithHelp("e", "edit"),
 		),
 	}
 }

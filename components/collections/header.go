@@ -9,6 +9,7 @@ import (
 
 type Header struct {
 	steps Steps
+	mode  string //Create or Edit
 }
 
 func (h Header) Init() tea.Cmd {
@@ -20,9 +21,13 @@ func (h Header) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (h Header) View() string {
+	icon := ""
+	if h.mode == "edit" {
+		icon = "󰷎"
+	}
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
-		config.BoxHeader.Render(" Create collection"),
+		config.BoxHeader.Render(icon+" "+h.mode+" collection"),
 		h.steps.View(),
 	)
 }
