@@ -22,7 +22,7 @@ func (h Header) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (h Header) View() string {
 	icon := ""
-	if h.mode == "edit" {
+	if h.mode == "Edit" {
 		icon = "󰷎"
 	}
 	return lipgloss.JoinVertical(
