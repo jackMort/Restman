@@ -3,7 +3,8 @@ package collections
 import (
 	"restman/app"
 	"restman/components/config"
-	"restman/components/popup"
+	"restman/components/overlay"
+	"restman/utils"
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -13,8 +14,10 @@ import (
 )
 
 const (
-	COLLECTION_IDX = iota
-	URL_IDX
+	NAME_IDX = iota
+	COLLECTION_IDX
+	CLOSE_IDX
+	SAVE_IDX
 )
 
 // AddToCollectionResultMsg is the message sent when a choice is made.
@@ -24,11 +27,14 @@ type AddToCollectionResultMsg struct {
 
 // AddToCollection is a popup that presents a yes/no choice to the user.
 type AddToCollection struct {
-	overlay popup.Overlay
-	inputs  []textinput.Model
-	focused int
-	save    bool
-	err     error
+	inputs   []textinput.Model
+	focused  int
+	save     bool
+	errors   []string
+	bgRaw    string
+	width    int
+	startRow int
+	startCol int
 }
 
 func NewAddToCollection(bgRaw string, width int, vWidth int) AddToCollection {
@@ -36,23 +42,21 @@ func NewAddToCollection(bgRaw string, width int, vWidth int) AddToCollection {
 
 	inputs[COLLECTION_IDX] = textinput.New()
 	inputs[COLLECTION_IDX].Placeholder = "Collection"
-	inputs[COLLECTION_IDX].Prompt = ""
+	inputs[COLLECTION_IDX].Prompt = "󱞩 "
 	inputs[COLLECTION_IDX].ShowSuggestions = true
 	inputs[COLLECTION_IDX].KeyMap.AcceptSuggestion = key.NewBinding(
 		key.WithKeys("enter"),
 	)
 
-	inputs[URL_IDX] = textinput.New()
-	inputs[URL_IDX].Placeholder = "https://sampleapi.com/api/v1"
-	inputs[URL_IDX].Prompt = ""
-	inputs[URL_IDX].Width = 35
+	inputs[NAME_IDX] = textinput.New()
+	inputs[NAME_IDX].Placeholder = "/hello"
+	inputs[NAME_IDX].Prompt = "󱞩 "
+	inputs[NAME_IDX].Width = 35
 
 	if app.GetInstance().SelectedCollection != nil {
 		inputs[COLLECTION_IDX].SetValue(app.GetInstance().SelectedCollection.Name)
-		inputs[URL_IDX].Focus()
-	} else {
-		inputs[COLLECTION_IDX].Focus()
 	}
+
 	collections := app.GetInstance().Collections
 	suggestions := make([]string, len(collections))
 	for i, c := range collections {
@@ -61,10 +65,16 @@ func NewAddToCollection(bgRaw string, width int, vWidth int) AddToCollection {
 	inputs[COLLECTION_IDX].SetSuggestions(suggestions)
 
 	return AddToCollection{
-		overlay: popup.NewOverlayOnPosition(bgRaw, width, 13, 3, vWidth-width-4),
-		inputs:  inputs,
-		focused: 0,
+		bgRaw:    bgRaw,
+		startRow: 3,
+		width:    width,
+		startCol: vWidth - width - 4,
+		inputs:   inputs,
+		focused:  NAME_IDX,
 	}
+}
+func (c AddToCollection) Name() string {
+	return c.inputs[NAME_IDX].Value()
 }
 
 func (c AddToCollection) CollectionName() string {
@@ -72,7 +82,7 @@ func (c AddToCollection) CollectionName() string {
 }
 
 func (c AddToCollection) SetUrl(url string) {
-	c.inputs[URL_IDX].SetValue(url)
+	c.inputs[NAME_IDX].SetValue(url)
 }
 
 // Init initializes the popup.
@@ -102,9 +112,9 @@ func (c AddToCollection) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyEnter:
-			if c.focused == 3 {
+			if c.focused == CLOSE_IDX {
 				return c, c.makeChoice()
-			} else if c.focused == 2 {
+			} else if c.focused == SAVE_IDX {
 				c.save = true
 				return c, c.makeChoice()
 			}
@@ -127,16 +137,28 @@ func (c AddToCollection) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		c.inputs[i], cmds[i] = c.inputs[i].Update(msg)
 	}
 
+	c.Validate()
+
 	return c, tea.Batch(cmds...)
+}
+
+func (c *AddToCollection) Validate() {
+	c.errors = make([]string, 0)
+	if c.inputs[COLLECTION_IDX].Value() == "" {
+		c.errors = append(c.errors, "Collection is required")
+	}
+	if c.inputs[NAME_IDX].Value() == "" {
+		c.errors = append(c.errors, "Request name is required")
+	}
 }
 
 // View renders the popup.
 func (c AddToCollection) View() string {
 	okButtonStyle := config.ButtonStyle
 	cancelButtonStyle := config.ButtonStyle
-	if c.focused == 2 {
+	if c.focused == SAVE_IDX {
 		okButtonStyle = config.ActiveButtonStyle
-	} else if c.focused == 3 {
+	} else if c.focused == CLOSE_IDX {
 		cancelButtonStyle = config.ActiveButtonStyle
 	}
 
@@ -144,30 +166,29 @@ func (c AddToCollection) View() string {
 	cancelButton := zone.Mark("add_to_collection_cancel", cancelButtonStyle.Render("Cancel"))
 
 	buttons := lipgloss.PlaceHorizontal(
-		c.overlay.Width(),
-		lipgloss.Left,
-		lipgloss.JoinHorizontal(lipgloss.Right, okButton, " ", cancelButton),
+		c.width,
+		lipgloss.Right,
+		lipgloss.JoinHorizontal(lipgloss.Right, cancelButton, " ", okButton),
 	)
 
 	header := config.BoxHeader.Render("Add to collection")
 
 	inputs := lipgloss.JoinVertical(
 		lipgloss.Left,
-		inputStyle.Width(30).Render("Collection:"),
-		c.inputs[COLLECTION_IDX].View(),
+		config.LabelStyle.Width(30).Render("Request Name:"),
+		config.InputStyle.Render(c.inputs[NAME_IDX].View()),
 		" ",
-
-		inputStyle.Width(30).Render("URL:"),
-		c.inputs[URL_IDX].View(),
+		config.LabelStyle.Width(30).Render("Collection:"),
+		config.InputStyle.Render(c.inputs[COLLECTION_IDX].View()),
 		" ",
-		" ",
+		utils.RenderErrors(c.errors),
 		buttons,
 	)
 
 	ui := lipgloss.JoinVertical(lipgloss.Left, header, " ", inputs)
-	dialog := lipgloss.Place(c.overlay.Width()-2, c.overlay.Height()-2, lipgloss.Left, lipgloss.Top, ui)
 
-	return c.overlay.WrapView(general.Render(dialog))
+	content := general.Render(ui)
+	return overlay.PlaceOverlay(c.startCol, c.startRow, content, c.bgRaw)
 }
 
 func (c AddToCollection) makeChoice() tea.Cmd {

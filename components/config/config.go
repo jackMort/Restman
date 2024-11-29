@@ -17,6 +17,7 @@ var (
 	COLOR_WHITE      = lipgloss.AdaptiveColor{Light: "#ffffff", Dark: "#ffffff"}
 	COLOR_LINK       = lipgloss.AdaptiveColor{Light: "#6C9EF8", Dark: "#6C9EF8"}
 	COLOR_ERROR      = lipgloss.AdaptiveColor{Light: "#F25C54", Dark: "#F25C54"}
+	COLOR_LIGHTER    = lipgloss.AdaptiveColor{Light: "#9f9f9f", Dark: "#9f9f9f"}
 )
 
 const (
@@ -80,6 +81,13 @@ var LinkStyle = lipgloss.NewStyle().
 var ErrorStyle = lipgloss.NewStyle().
 	Bold(true).
 	Foreground(COLOR_ERROR)
+
+var InputStyle = lipgloss.NewStyle().
+	BorderForeground(COLOR_SUBTLE).
+	Foreground(COLOR_FOREGROUND)
+
+var LabelStyle = lipgloss.NewStyle().
+	Foreground(COLOR_LIGHTER)
 
 var Methods = map[string]string{
 	"GET":    MethodStyle.Background(lipgloss.Color(methodColors["GET"])).Render("GET"),

@@ -27,12 +27,6 @@ const (
 )
 
 var (
-	inputStyle = lipgloss.NewStyle().
-			Foreground(config.COLOR_FOREGROUND).
-			BorderStyle(lipgloss.NormalBorder()).
-			BorderBottom(true).
-			BorderForeground(config.COLOR_SUBTLE)
-
 	general = lipgloss.NewStyle().
 		UnsetAlign().
 		Padding(1, 2).
@@ -271,9 +265,9 @@ func (c Model) View() string {
 		inputs = lipgloss.JoinVertical(
 			lipgloss.Left,
 			" ",
-			inputStyle.Render(c.inputs[USERNAME_IDX].View()),
+			config.InputStyle.Render(c.inputs[USERNAME_IDX].View()),
 			" ",
-			inputStyle.Render(c.inputs[PASSWORD_IDX].View()),
+			config.InputStyle.Render(c.inputs[PASSWORD_IDX].View()),
 			" ",
 		)
 	case NONE:
@@ -282,16 +276,16 @@ func (c Model) View() string {
 		inputs = lipgloss.JoinVertical(
 			lipgloss.Left,
 			" ",
-			inputStyle.Render(c.inputs[TOKEN_IDX].View()),
+			config.InputStyle.Render(c.inputs[TOKEN_IDX].View()),
 			" ",
 		)
 	case API_KEY:
 		inputs = lipgloss.JoinVertical(
 			lipgloss.Left,
 			" ",
-			inputStyle.Render(c.inputs[API_KEY_IDX].View()),
+			config.InputStyle.Render(c.inputs[API_KEY_IDX].View()),
 			" ",
-			inputStyle.Render(c.inputs[API_VALUE_IDX].View()),
+			config.InputStyle.Render(c.inputs[API_VALUE_IDX].View()),
 			" ",
 		)
 

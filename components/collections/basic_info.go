@@ -18,9 +18,6 @@ const (
 )
 
 var (
-	inputStyle = lipgloss.NewStyle().
-			Foreground(config.COLOR_FOREGROUND)
-
 	general = lipgloss.NewStyle().
 		UnsetAlign().
 		Padding(0, 1, 0, 1).
@@ -47,14 +44,14 @@ func NewBasicInfo(collection *app.Collection) BasicInfo {
 	var inputs []textinput.Model = make([]textinput.Model, 2)
 	inputs[TITLE_IDX] = textinput.New()
 	inputs[TITLE_IDX].Placeholder = "My Collection"
-	inputs[TITLE_IDX].Focus()
-	inputs[TITLE_IDX].Prompt = ""
 	inputs[TITLE_IDX].SetValue(collection.Name)
+	inputs[TITLE_IDX].Prompt = "󱞩 "
+	inputs[TITLE_IDX].Focus()
 
 	inputs[BASE_URL_IDX] = textinput.New()
 	inputs[BASE_URL_IDX].Placeholder = "https://sampleapi.com/api/v1"
-	inputs[BASE_URL_IDX].Prompt = ""
 	inputs[BASE_URL_IDX].SetValue(collection.BaseUrl)
+	inputs[BASE_URL_IDX].Prompt = "󱞩 "
 
 	mode := "Create"
 	if collection.ID != "" {
@@ -133,12 +130,12 @@ func (c BasicInfo) Update(msg tea.Msg) (BasicInfo, tea.Cmd) {
 func (c BasicInfo) View() string {
 	inputs := lipgloss.JoinVertical(
 		lipgloss.Left,
-		inputStyle.Width(30).Render("Title:"),
-		c.inputs[TITLE_IDX].View(),
+		config.LabelStyle.Render("Title:"),
+		config.InputStyle.Render(c.inputs[TITLE_IDX].View()),
 		" ",
 
-		inputStyle.Width(30).Render("Base URL:"),
-		c.inputs[BASE_URL_IDX].View(),
+		config.LabelStyle.Render("Base URL:"),
+		config.InputStyle.Render(c.inputs[BASE_URL_IDX].View()),
 		" ",
 	)
 

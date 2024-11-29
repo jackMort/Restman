@@ -21,13 +21,9 @@ func (h Header) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (h Header) View() string {
-	icon := ""
-	if h.mode == "Edit" {
-		icon = "󰷎"
-	}
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
-		config.BoxHeader.Render(icon+" "+h.mode+" collection"),
+		config.BoxHeader.Render(h.mode+" collection"),
 		h.steps.View(),
 	)
 }

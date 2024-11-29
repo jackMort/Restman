@@ -95,6 +95,7 @@ func (i *Collection) ValidatePartial(fields ...string) []string {
 
 type Call struct {
 	ID       string   `json:"id"`
+	Name     string   `json:"name"`
 	Url      string   `json:"url"`
 	Method   string   `json:"method"`
 	Headers  []string `json:"headers"`
@@ -112,10 +113,12 @@ func NewCall() *Call {
 }
 
 func (i Call) Title() string {
-	switch i.Url {
-	case "h", "ht", "htt", "http", "https", "https:", "http:", "http:/", "https:/", "http://", "https://":
-		return i.Url
-	case "{",
+	url := i.Url
+	if i.Name != "" {
+		url = i.Name
+	}
+	switch url {
+	case "h", "ht", "htt", "http", "https", "https:", "http:", "http:/", "https:/", "http://", "https://", "{",
 		"{{",
 		"{{B",
 		"{{BA",
@@ -127,9 +130,9 @@ func (i Call) Title() string {
 		"{{BASE_URL",
 		"{{BASE_URL}",
 		"{{BASE_URL}}":
-		return i.Url
+		return url
 	default:
-		url_processed := strings.Replace(i.Url, "{{BASE_URL}}", "", 1)
+		url_processed := strings.Replace(url, "{{BASE_URL}}", "", 1)
 		url := strings.Split(url_processed, "://")
 		if len(url) > 1 && url[1] != "" {
 			return url[1]

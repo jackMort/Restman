@@ -86,6 +86,7 @@ func (c *Authentication) setBasedOnMethod() {
 		c.inputs[0].Placeholder = "username"
 		c.inputs[0].Prompt = "  "
 		c.inputs[0].SetValue(username)
+		c.inputs[0].PromptStyle = config.InputStyle
 
 		c.inputs[1] = textinput.New()
 		c.inputs[1].Placeholder = "password"
@@ -239,9 +240,9 @@ func (c Authentication) View() string {
 		inputs = lipgloss.JoinVertical(
 			lipgloss.Left,
 			" ",
-			inputStyle.Render(c.inputs[0].View()),
+			config.InputStyle.Render(c.inputs[0].View()),
 			" ",
-			inputStyle.Render(c.inputs[1].View()),
+			config.InputStyle.Render(c.inputs[1].View()),
 			" ",
 		)
 	case NONE:
@@ -250,7 +251,7 @@ func (c Authentication) View() string {
 		inputs = lipgloss.JoinVertical(
 			lipgloss.Left,
 			" ",
-			inputStyle.Render(c.inputs[0].View()),
+			config.InputStyle.Render(c.inputs[0].View()),
 			" ",
 			" ",
 			" ",
@@ -259,9 +260,9 @@ func (c Authentication) View() string {
 		inputs = lipgloss.JoinVertical(
 			lipgloss.Left,
 			" ",
-			inputStyle.Render(c.inputs[0].View()),
+			config.InputStyle.Render(c.inputs[0].View()),
 			" ",
-			inputStyle.Render(c.inputs[1].View()),
+			config.InputStyle.Render(c.inputs[1].View()),
 			" ",
 		)
 
