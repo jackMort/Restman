@@ -95,6 +95,20 @@ func (m callModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.list.Title = zone.Mark("collections_minify", "󰅁 "+m.collection.Name)
 		return m, m.list.SetItems(items)
 
+	case app.FetchCollectionsSuccessMsg:
+		items := []list.Item{}
+		for _, c := range msg.Collections {
+			if c.ID == m.collection.ID {
+				for _, call := range c.Calls {
+					items = append(items, call)
+				}
+				break
+			}
+		}
+
+		m.list.Title = zone.Mark("collections_minify", "󰅁 "+m.collection.Name)
+		return m, m.list.SetItems(items)
+
 	case tea.WindowSizeMsg:
 		x, y := appStyle.GetFrameSize()
 		m.list.SetSize(msg.Width-x-4, msg.Height-y-2)
