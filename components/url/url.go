@@ -52,6 +52,7 @@ type Url struct {
 	defaultText string
 	call        *app.Call
 	collection  *app.Collection
+	modified    bool
 }
 
 func New() Url {
@@ -94,6 +95,9 @@ func (m Url) Submit() (tea.Model, tea.Cmd) {
 func (m Url) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
+	newModel, cmd := m.t.Update(msg)
+	m.t = newModel
+
 	switch msg := msg.(type) {
 
 	case app.CallSelectedMsg:
@@ -134,10 +138,14 @@ func (m Url) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+r":
 			m.CycleOverMethods()
 		}
-	}
 
-	newModel, cmd := m.t.Update(msg)
-	m.t = newModel
+		// check if call was modified
+		if m.call != nil {
+			m.call.Url = m.t.Prompt + m.t.Value()
+			m.modified = m.call.WasChanged()
+		}
+
+	}
 
 	return m, cmd
 }
@@ -166,9 +174,21 @@ func (m Url) View() string {
 	}
 	method := zone.Mark("method", config.Methods[m.method])
 	send := zone.Mark("send", buttonStyle.Render(" SEND "))
-	save := zone.Mark("save", " ")
 
-	m.t.Width = m.width - lipgloss.Width(method) - lipgloss.Width(send) - 9
+	w := 7
+	save := ""
+	if m.call == nil {
+		save = zone.Mark("save", " ")
+		w += 2
+	} else if m.call != nil {
+		save = zone.Mark("save", lipgloss.NewStyle().Foreground(config.COLOR_WHITE).Render("󰪩 "))
+		if m.modified {
+			save = zone.Mark("save", lipgloss.NewStyle().Foreground(config.COLOR_WARNING).Render("󰮆 "))
+		}
+		w += 2
+	}
+
+	m.t.Width = m.width - lipgloss.Width(method) - lipgloss.Width(send) - w
 	m.t.Placeholder = m.placeholder + strings.Repeat(" ", utils.MaxInt(0, m.t.Width-len(m.placeholder)+1))
 
 	v := zone.Mark("input", m.t.View())

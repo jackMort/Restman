@@ -11,6 +11,7 @@ import (
 	"restman/utils"
 	"strings"
 
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/google/uuid"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -102,6 +103,7 @@ type Call struct {
 	Auth     *Auth    `json:"auth"`
 	Data     string   `json:"data"`
 	DataType string   `json:"data_type"`
+	hash     string
 }
 
 func NewCall() *Call {
@@ -110,6 +112,11 @@ func NewCall() *Call {
 		Method:  "GET",
 		Headers: []string{},
 	}
+}
+
+// function to check if Call was updated
+func (i Call) WasChanged() bool {
+	return i.hash != utils.ComputeHash(i)
 }
 
 func (i Call) Title() string {
@@ -149,7 +156,6 @@ func (i Call) HeadersCount() int {
 }
 
 func (i Call) ParamsCount() int {
-
 	items := make(map[string][]string)
 	u, err := url.Parse(i.Url)
 	if err == nil && i.Url != "" {
@@ -229,9 +235,42 @@ func (a *App) ReadCollectionsFromJSON() tea.Cmd {
 	}
 	json.Unmarshal(file, &a.Collections)
 
+	// filePath := "/home/jackmort/programming/gotest/petstorev3.json" // Replace with your OpenAPI spec file path
+	// collection, err := ImportOpenAPISpec(filePath)
+	//
+	// // append to Collections
+	// a.Collections = append(a.Collections, *collection)
+
+	// set hash for each call
+	for i, collection := range a.Collections {
+		for j, call := range collection.Calls {
+			a.Collections[i].Calls[j].hash = utils.ComputeHash(call)
+		}
+	}
+
 	return func() tea.Msg {
 		return FetchCollectionsSuccessMsg{Collections: a.Collections}
 	}
+}
+
+func (a *App) ImportCollectionFromUrl(url string) tea.Cmd {
+	// create temporary file
+	file, err := utils.DownloadToTempFile(url)
+	if err != nil {
+		// TODO: handle error
+		println(err)
+		return nil
+	}
+
+	// add to collection and save
+	collection, err := ImportOpenAPISpec(file)
+	if err != nil {
+		// TODO: handle error
+		println(err)
+		return nil
+	}
+
+	return a.CreateCollection(*collection)
 }
 
 func (a *App) SetSelectedCollection(collection *Collection) tea.Cmd {
@@ -284,6 +323,8 @@ func (a *App) UpdateCall(call *Call) tea.Cmd {
 		for j, c := range collection.Calls {
 			if c.ID == call.ID {
 				a.Collections[i].Calls[j] = *call
+				// compute hash so we can compare later
+				a.Collections[i].Calls[j].hash = utils.ComputeHash(*call)
 			}
 		}
 	}
@@ -441,4 +482,215 @@ func (a *App) RemoveCollection(collection Collection) tea.Cmd {
 		a.SaveCollections(),
 		a.SetSelectedCollection(a.SelectedCollection),
 	)
+}
+
+func ImportOpenAPISpec(filePath string) (*Collection, error) {
+	// Load the OpenAPI spec
+	loader := openapi3.NewLoader()
+	doc, err := loader.LoadFromFile(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create a new Collection
+	collection := &Collection{
+		ID:      "example-id",
+		Name:    doc.Info.Title,
+		BaseUrl: getBaseUrl(doc),
+		Calls:   []Call{},
+	}
+
+	// Iterate over paths in matching order
+	for _, path := range doc.Paths.InMatchingOrder() {
+		item := doc.Paths.Find(path)
+
+		for method, operation := range item.Operations() {
+			data, dataType := extractRequestBodyData(doc, operation)
+			call := Call{
+				ID:       operation.OperationID,
+				Name:     operation.Summary,
+				Url:      genereatePartialUrl(path),
+				Method:   method,
+				Headers:  extractHeaders(operation),
+				Auth:     extractAuth(doc, operation),
+				Data:     data,
+				DataType: dataType,
+			}
+			collection.Calls = append(collection.Calls, call)
+		}
+	}
+
+	return collection, nil
+}
+
+func getBaseUrl(doc *openapi3.T) string {
+	if doc.Servers != nil && len(doc.Servers) > 0 {
+		return doc.Servers[0].URL
+	}
+	return ""
+}
+
+func genereatePartialUrl(path string) string {
+	if strings.HasPrefix(path, "http") {
+		return path
+	}
+	if strings.HasPrefix(path, "/") {
+		return "{{BASE_URL}}" + path
+	}
+	return "{{BASE_URL}}/" + path
+}
+
+func extractRequestBodyData(doc *openapi3.T, operation *openapi3.Operation) (string, string) {
+	if operation.RequestBody != nil && operation.RequestBody.Value != nil {
+		for contentType, mediaType := range operation.RequestBody.Value.Content {
+			// Check for direct examples
+			if example := mediaType.Example; example != nil {
+				if exampleData, err := json.Marshal(example); err == nil {
+					return string(exampleData), contentType
+				}
+			}
+			// Check for named examples
+			for _, example := range mediaType.Examples {
+				if example.Value != nil {
+					if exampleData, err := json.Marshal(example.Value.Value); err == nil {
+						return string(exampleData), contentType
+					}
+				}
+			}
+			// Check for schema examples
+			if schemaRef := mediaType.Schema; schemaRef != nil && schemaRef.Value != nil {
+				if exampleData, err := generateExampleFromSchema(doc, schemaRef.Value); err == nil {
+					return exampleData, contentType
+				}
+			}
+		}
+	}
+	return "", ""
+}
+
+func isType(schema *openapi3.Schema, t string) bool {
+	if schema.Type != nil {
+		for _, typ := range *schema.Type {
+			if typ == t {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func generateExampleFromSchema(doc *openapi3.T, schema *openapi3.Schema) (string, error) {
+	// If the schema has an example, use it
+	if schema.Example != nil {
+		exampleData, err := json.Marshal(schema.Example)
+		if err != nil {
+			return "", err
+		}
+		return string(exampleData), nil
+	}
+
+	// Handle object type schemas
+	if isType(schema, "object") {
+		example := make(map[string]interface{})
+		for propName, propSchemaRef := range schema.Properties {
+			propSchema := propSchemaRef.Value
+			if propSchema == nil {
+				continue
+			}
+			propExample, err := generateExampleFromSchema(doc, propSchema)
+			if err != nil {
+				return "", err
+			}
+			var propValue interface{}
+			if err := json.Unmarshal([]byte(propExample), &propValue); err != nil {
+				return "", err
+			}
+			example[propName] = propValue
+		}
+		exampleData, err := json.Marshal(example)
+		if err != nil {
+			return "", err
+		}
+		return string(exampleData), nil
+	}
+
+	// Handle array type schemas
+	if isType(schema, "array") && schema.Items != nil {
+		itemSchema := schema.Items.Value
+		if itemSchema == nil {
+			return "", nil
+		}
+		itemExample, err := generateExampleFromSchema(doc, itemSchema)
+		if err != nil {
+			return "", err
+		}
+		var itemValue interface{}
+		if err := json.Unmarshal([]byte(itemExample), &itemValue); err != nil {
+			return "", err
+		}
+		example := []interface{}{itemValue}
+		exampleData, err := json.Marshal(example)
+		if err != nil {
+			return "", err
+		}
+		return string(exampleData), nil
+	}
+
+	// Handle primitive types with default values
+	if schema.Default != nil {
+		exampleData, err := json.Marshal(schema.Default)
+		if err != nil {
+			return "", err
+		}
+		return string(exampleData), nil
+	}
+
+	return "", nil
+}
+
+func extractHeaders(operation *openapi3.Operation) []string {
+	headers := []string{}
+	for _, param := range operation.Parameters {
+		if param.Value.In == "header" {
+			headers = append(headers, param.Value.Name)
+		}
+	}
+	return headers
+}
+
+func extractAuth(doc *openapi3.T, operation *openapi3.Operation) *Auth {
+	if operation.Security != nil {
+		for _, security := range *operation.Security {
+			for name := range security {
+				// Ensure doc.Components and SecuritySchemes are not nil
+				if doc == nil || doc.Components == nil || doc.Components.SecuritySchemes == nil {
+					continue
+				}
+				scheme, ok := doc.Components.SecuritySchemes[name]
+				if ok && scheme != nil && scheme.Value != nil {
+					return mapSecurityScheme(scheme.Value)
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func mapSecurityScheme(scheme *openapi3.SecurityScheme) *Auth {
+	switch scheme.Type {
+	case "http":
+		if scheme.Scheme == "basic" {
+			return &Auth{Type: "basic"}
+		}
+		if scheme.Scheme == "bearer" {
+			return &Auth{Type: "bearer", Token: ""}
+		}
+	case "apiKey":
+		return &Auth{
+			Type:        "apiKey",
+			HeaderName:  scheme.Name,
+			HeaderValue: "",
+		}
+	}
+	return nil
 }

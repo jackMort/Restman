@@ -4,6 +4,7 @@ import (
 	"restman/app"
 	"restman/components/collections"
 	"restman/components/config"
+	"restman/components/importer"
 	"restman/components/popup"
 	"restman/components/request"
 	"restman/components/url"
@@ -321,6 +322,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.popup = nil
 		return m, cmd
 
+	case importer.ImportResultMsg:
+		m.popup = nil
+		if msg.Result {
+			return m, app.GetInstance().ImportCollectionFromUrl(msg.Url)
+		}
+		return m, cmd
+
 	case collections.AddToCollectionResultMsg:
 		if msg.Result {
 			cmd = m.AddToCollection()
@@ -364,6 +372,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			case "ctrl+n":
 				m.popup = collections.NewForm(app.NewCollection(), m.GetFadedView(), 70)
+				return m, m.popup.Init()
+
+			case "ctrl+o":
+				m.popup = importer.NewForm(m.GetFadedView(), 70)
 				return m, m.popup.Init()
 
 			case "ctrl+a":

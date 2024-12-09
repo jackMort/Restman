@@ -1,7 +1,9 @@
 package utils
 
 import (
+	"crypto/sha256"
 	"encoding/json"
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -57,4 +59,11 @@ func FormatJSON(value string) string {
 		value = string(s)
 	}
 	return value
+}
+
+// computeHash computes a SHA256 hash for any struct or data type.
+func ComputeHash(v interface{}) string {
+	data, _ := json.Marshal(v)
+	hash := sha256.Sum256(data)
+	return fmt.Sprintf("%x", hash)
 }

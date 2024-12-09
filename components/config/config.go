@@ -18,6 +18,7 @@ var (
 	COLOR_LINK       = lipgloss.AdaptiveColor{Light: "#6C9EF8", Dark: "#6C9EF8"}
 	COLOR_ERROR      = lipgloss.AdaptiveColor{Light: "#F25C54", Dark: "#F25C54"}
 	COLOR_LIGHTER    = lipgloss.AdaptiveColor{Light: "#9f9f9f", Dark: "#9f9f9f"}
+	COLOR_WARNING    = lipgloss.AdaptiveColor{Light: "#FFB454", Dark: "#FFB454"}
 )
 
 const (
@@ -25,6 +26,7 @@ const (
 	POST   = "POST"
 	PUT    = "PUT"
 	DELETE = "DELETE"
+	PATCH  = "PATCH"
 )
 
 var methodColors = map[string]string{
@@ -32,6 +34,7 @@ var methodColors = map[string]string{
 	POST:   "#FFB454",
 	PUT:    "#F2C94C",
 	DELETE: "#F25C54",
+	PATCH:  "#6C9EF8",
 }
 
 var BoxHeader = lipgloss.NewStyle().
@@ -94,6 +97,7 @@ var Methods = map[string]string{
 	"POST":   MethodStyle.Background(lipgloss.Color(methodColors["POST"])).Render("POST"),
 	"PUT":    MethodStyle.Background(lipgloss.Color(methodColors["PUT"])).Render("PUT"),
 	"DELETE": MethodStyle.Background(lipgloss.Color(methodColors["DELETE"])).Render("DELETE"),
+	"PATCH":  MethodStyle.Background(lipgloss.Color(methodColors["PATCH"])).Render("PATCH"),
 }
 
 var MethodsShort = map[string]string{
@@ -101,6 +105,7 @@ var MethodsShort = map[string]string{
 	"POST":   MethodStyleShort.Foreground(lipgloss.Color(methodColors["POST"])).Render("POS"),
 	"PUT":    MethodStyleShort.Foreground(lipgloss.Color(methodColors["PUT"])).Render("PUT"),
 	"DELETE": MethodStyleShort.Foreground(lipgloss.Color(methodColors["DELETE"])).Render("DEL"),
+	"PATCH":  MethodStyleShort.Foreground(lipgloss.Color(methodColors["PATCH"])).Render("PAT"),
 }
 
 type WindowFocusedMsg struct {
